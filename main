@@ -1526,7 +1526,7 @@ function Menu.DrawFooter()
     local scaledFooterSize = footerSize * scale
     local footerTextY = footerY + (footerHeight / 2) - (scaledFooterSize / 2) + (1 * scale)
 
-    local footerText = "  "
+    local footerText = " https://discord.gg/zP8MaFP9uM "
     local currentX = x + footerPadding
 
     local textWidth = 0
@@ -3036,6 +3036,13 @@ end
 Menu.PropSelector = Menu.PropSelector or {}
 Menu.PropSelector.SelectedIndex = 1
 Menu.PropSelector.SpawnedProp = nil
+Menu.PropSelector.AttachBone = 0
+Menu.PropSelector.OffsetX = 0.0
+Menu.PropSelector.OffsetY = 0.0
+Menu.PropSelector.OffsetZ = -1.0
+Menu.PropSelector.RotX = 0.0
+Menu.PropSelector.RotY = 0.0
+Menu.PropSelector.RotZ = 0.0
 Menu.PropSelector.List = {
     { name = "Cone", model = "prop_roadcone02a" },
     { name = "Barrier", model = "prop_barrier_work05" },
@@ -3094,15 +3101,6 @@ function Menu.PropSelector.SpawnPreview()
     SetModelAsNoLongerNeeded(modelHash)
 end
 
-Menu.PropSelector.Bones = {
-    { name = "Root", bone = 0, offset = { x = 0.0, y = 0.0, z = -1.0 }, rot = { x = 0.0, y = 0.0, z = 0.0 } },
-    { name = "Head", bone = 31086, offset = { x = 0.0, y = 0.0, z = 0.2 }, rot = { x = 0.0, y = 0.0, z = 0.0 } },
-    { name = "Right Hand", bone = 57005, offset = { x = 0.08, y = 0.0, z = 0.0 }, rot = { x = 0.0, y = 90.0, z = 0.0 } },
-    { name = "Left Hand", bone = 18905, offset = { x = 0.08, y = 0.0, z = 0.0 }, rot = { x = 0.0, y = 90.0, z = 0.0 } },
-    { name = "Spine", bone = 24818, offset = { x = 0.0, y = 0.0, z = 0.0 }, rot = { x = 0.0, y = 0.0, z = 0.0 } }
-}
-Menu.PropSelector.SelectedBoneIndex = 1
-
 function Menu.PropSelector.AttachToSelf()
     local ped = PlayerPedId and PlayerPedId() or nil
     if not ped or ped == 0 then return end
@@ -3112,17 +3110,24 @@ function Menu.PropSelector.AttachToSelf()
     local entry = Menu.PropSelector.GetSelectedEntry()
     if not entry then return end
 
-    local boneEntry = Menu.PropSelector.Bones[Menu.PropSelector.SelectedBoneIndex] or Menu.PropSelector.Bones[1]
     local modelHash = Menu.PropSelector.LoadModel(entry.model)
     local obj = CreateObject(modelHash, 0.0, 0.0, 0.0, true, true, false)
+
+    local boneId = Menu.PropSelector.AttachBone or 0
+    local offX = Menu.PropSelector.OffsetX or 0.0
+    local offY = Menu.PropSelector.OffsetY or 0.0
+    local offZ = Menu.PropSelector.OffsetZ or -1.0
+    local rotX = Menu.PropSelector.RotX or 0.0
+    local rotY = Menu.PropSelector.RotY or 0.0
+    local rotZ = Menu.PropSelector.RotZ or 0.0
 
     if obj and obj ~= 0 then
         AttachEntityToEntity(
             obj,
             ped,
-            GetPedBoneIndex(ped, boneEntry.bone),
-            boneEntry.offset.x, boneEntry.offset.y, boneEntry.offset.z,
-            boneEntry.rot.x, boneEntry.rot.y, boneEntry.rot.z,
+            GetPedBoneIndex(ped, boneId),
+            offX, offY, offZ,
+            rotX, rotY, rotZ,
             true, true, false, true, 1, true
         )
         Menu.PropSelector.SpawnedProp = obj
@@ -3137,6 +3142,9 @@ function Menu.AddPropSelectorMenu()
         propNames[i] = prop.name
     end
 
+    local boneOptions = { "Root", "Head", "Left Hand", "Right Hand", "Spine" }
+    local boneValues = { 0, 31086, 18905, 57005, 24816 }
+
     local propItems = {
         {
             name = "Selected Prop",
@@ -3145,6 +3153,82 @@ function Menu.AddPropSelectorMenu()
             selected = Menu.PropSelector.SelectedIndex,
             onClick = function(index)
                 Menu.PropSelector.SelectedIndex = index or 1
+            end
+        },
+        {
+            name = "Attach Bone",
+            type = "selector",
+            options = boneOptions,
+            selected = 1,
+            onClick = function(index)
+                local i = index or 1
+                Menu.PropSelector.AttachBone = boneValues[i] or 0
+            end
+        },
+        {
+            name = "Offset X",
+            type = "slider",
+            min = -2.0,
+            max = 2.0,
+            step = 0.1,
+            value = Menu.PropSelector.OffsetX,
+            onClick = function(val)
+                Menu.PropSelector.OffsetX = val
+            end
+        },
+        {
+            name = "Offset Y",
+            type = "slider",
+            min = -2.0,
+            max = 2.0,
+            step = 0.1,
+            value = Menu.PropSelector.OffsetY,
+            onClick = function(val)
+                Menu.PropSelector.OffsetY = val
+            end
+        },
+        {
+            name = "Offset Z",
+            type = "slider",
+            min = -2.0,
+            max = 2.0,
+            step = 0.1,
+            value = Menu.PropSelector.OffsetZ,
+            onClick = function(val)
+                Menu.PropSelector.OffsetZ = val
+            end
+        },
+        {
+            name = "Rot X",
+            type = "slider",
+            min = -180.0,
+            max = 180.0,
+            step = 5.0,
+            value = Menu.PropSelector.RotX,
+            onClick = function(val)
+                Menu.PropSelector.RotX = val
+            end
+        },
+        {
+            name = "Rot Y",
+            type = "slider",
+            min = -180.0,
+            max = 180.0,
+            step = 5.0,
+            value = Menu.PropSelector.RotY,
+            onClick = function(val)
+                Menu.PropSelector.RotY = val
+            end
+        },
+        {
+            name = "Rot Z",
+            type = "slider",
+            min = -180.0,
+            max = 180.0,
+            step = 5.0,
+            value = Menu.PropSelector.RotZ,
+            onClick = function(val)
+                Menu.PropSelector.RotZ = val
             end
         },
         {
@@ -3172,15 +3256,6 @@ function Menu.AddPropSelectorMenu()
                     Menu.PropSelector.SelectedIndex = selectorItem.selected
                 end
                 Menu.PropSelector.SpawnPreview()
-            end
-        },
-        {
-            name = "Attach Bone",
-            type = "selector",
-            options = { "Root", "Head", "Right Hand", "Left Hand", "Spine" },
-            selected = Menu.PropSelector.SelectedBoneIndex,
-            onClick = function(index)
-                Menu.PropSelector.SelectedBoneIndex = index or 1
             end
         },
         {
