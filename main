@@ -3036,13 +3036,6 @@ end
 Menu.PropSelector = Menu.PropSelector or {}
 Menu.PropSelector.SelectedIndex = 1
 Menu.PropSelector.SpawnedProp = nil
-Menu.PropSelector.AttachBone = 0
-Menu.PropSelector.OffsetX = 0.0
-Menu.PropSelector.OffsetY = 0.0
-Menu.PropSelector.OffsetZ = -1.0
-Menu.PropSelector.RotX = 0.0
-Menu.PropSelector.RotY = 0.0
-Menu.PropSelector.RotZ = 0.0
 Menu.PropSelector.List = {
     { name = "Cone", model = "prop_roadcone02a" },
     { name = "Barrier", model = "prop_barrier_work05" },
@@ -3113,21 +3106,13 @@ function Menu.PropSelector.AttachToSelf()
     local modelHash = Menu.PropSelector.LoadModel(entry.model)
     local obj = CreateObject(modelHash, 0.0, 0.0, 0.0, true, true, false)
 
-    local boneId = Menu.PropSelector.AttachBone or 0
-    local offX = Menu.PropSelector.OffsetX or 0.0
-    local offY = Menu.PropSelector.OffsetY or 0.0
-    local offZ = Menu.PropSelector.OffsetZ or -1.0
-    local rotX = Menu.PropSelector.RotX or 0.0
-    local rotY = Menu.PropSelector.RotY or 0.0
-    local rotZ = Menu.PropSelector.RotZ or 0.0
-
     if obj and obj ~= 0 then
         AttachEntityToEntity(
             obj,
             ped,
-            GetPedBoneIndex(ped, boneId),
-            offX, offY, offZ,
-            rotX, rotY, rotZ,
+            GetPedBoneIndex(ped, 0),
+            0.0, 0.0, -1.0,
+            0.0, 0.0, 0.0,
             true, true, false, true, 1, true
         )
         Menu.PropSelector.SpawnedProp = obj
@@ -3142,9 +3127,6 @@ function Menu.AddPropSelectorMenu()
         propNames[i] = prop.name
     end
 
-    local boneOptions = { "Root", "Head", "Left Hand", "Right Hand", "Spine" }
-    local boneValues = { 0, 31086, 18905, 57005, 24816 }
-
     local propItems = {
         {
             name = "Selected Prop",
@@ -3153,82 +3135,6 @@ function Menu.AddPropSelectorMenu()
             selected = Menu.PropSelector.SelectedIndex,
             onClick = function(index)
                 Menu.PropSelector.SelectedIndex = index or 1
-            end
-        },
-        {
-            name = "Attach Bone",
-            type = "selector",
-            options = boneOptions,
-            selected = 1,
-            onClick = function(index)
-                local i = index or 1
-                Menu.PropSelector.AttachBone = boneValues[i] or 0
-            end
-        },
-        {
-            name = "Offset X",
-            type = "slider",
-            min = -2.0,
-            max = 2.0,
-            step = 0.1,
-            value = Menu.PropSelector.OffsetX,
-            onClick = function(val)
-                Menu.PropSelector.OffsetX = val
-            end
-        },
-        {
-            name = "Offset Y",
-            type = "slider",
-            min = -2.0,
-            max = 2.0,
-            step = 0.1,
-            value = Menu.PropSelector.OffsetY,
-            onClick = function(val)
-                Menu.PropSelector.OffsetY = val
-            end
-        },
-        {
-            name = "Offset Z",
-            type = "slider",
-            min = -2.0,
-            max = 2.0,
-            step = 0.1,
-            value = Menu.PropSelector.OffsetZ,
-            onClick = function(val)
-                Menu.PropSelector.OffsetZ = val
-            end
-        },
-        {
-            name = "Rot X",
-            type = "slider",
-            min = -180.0,
-            max = 180.0,
-            step = 5.0,
-            value = Menu.PropSelector.RotX,
-            onClick = function(val)
-                Menu.PropSelector.RotX = val
-            end
-        },
-        {
-            name = "Rot Y",
-            type = "slider",
-            min = -180.0,
-            max = 180.0,
-            step = 5.0,
-            value = Menu.PropSelector.RotY,
-            onClick = function(val)
-                Menu.PropSelector.RotY = val
-            end
-        },
-        {
-            name = "Rot Z",
-            type = "slider",
-            min = -180.0,
-            max = 180.0,
-            step = 5.0,
-            value = Menu.PropSelector.RotZ,
-            onClick = function(val)
-                Menu.PropSelector.RotZ = val
             end
         },
         {
@@ -3338,6 +3244,146 @@ end
 CreateThread(function()
     Wait(500)
     Menu.AddPropSelectorMenu()
+end)
+
+
+-- Harmless Player List Viewer
+Menu.PlayerList = Menu.PlayerList or {}
+Menu.PlayerList.Items = {}
+Menu.PlayerList.SelectedIndex = 1
+Menu.PlayerList.SelectedPlayerServerId = nil
+
+function Menu.PlayerList.Refresh()
+    Menu.PlayerList.Items = {}
+
+    if not GetActivePlayers then
+        return
+    end
+
+    for _, player in ipairs(GetActivePlayers()) do
+        local name = GetPlayerName(player) or ("Player " .. tostring(player))
+        local sid = GetPlayerServerId(player)
+        table.insert(Menu.PlayerList.Items, {
+            label = string.format("%s [%s]", name, tostring(sid)),
+            player = player,
+            serverId = sid,
+            name = name
+        })
+    end
+
+    table.sort(Menu.PlayerList.Items, function(a, b)
+        return (a.serverId or 0) < (b.serverId or 0)
+    end)
+
+    if #Menu.PlayerList.Items == 0 then
+        Menu.PlayerList.SelectedIndex = 1
+        Menu.PlayerList.SelectedPlayerServerId = nil
+    else
+        if Menu.PlayerList.SelectedIndex > #Menu.PlayerList.Items then
+            Menu.PlayerList.SelectedIndex = 1
+        end
+        Menu.PlayerList.SelectedPlayerServerId =
+            Menu.PlayerList.Items[Menu.PlayerList.SelectedIndex].serverId
+    end
+end
+
+function Menu.AddPlayerListMenu()
+    Menu.PlayerList.Refresh()
+
+    local function getLabels()
+        local labels = {}
+        for i, p in ipairs(Menu.PlayerList.Items) do
+            labels[i] = p.label
+        end
+        if #labels == 0 then
+            labels[1] = "No Players"
+        end
+        return labels
+    end
+
+    local playerItems = {
+        {
+            name = "Refresh Players",
+            type = "action",
+            onClick = function()
+                Menu.PlayerList.Refresh()
+                Menu.AddPlayerListMenu()
+            end
+        },
+        {
+            name = "Selected Player",
+            type = "selector",
+            options = getLabels(),
+            selected = Menu.PlayerList.SelectedIndex,
+            onClick = function(index)
+                Menu.PlayerList.SelectedIndex = index or 1
+                local entry = Menu.PlayerList.Items[Menu.PlayerList.SelectedIndex]
+                if entry then
+                    Menu.PlayerList.SelectedPlayerServerId = entry.serverId
+                    print("Selected: " .. entry.name .. " [" .. tostring(entry.serverId) .. "]")
+                end
+            end
+        },
+        {
+            name = "Print Selected Info",
+            type = "action",
+            onClick = function()
+                local entry = Menu.PlayerList.Items[Menu.PlayerList.SelectedIndex]
+                if entry then
+                    print("Player: " .. entry.name)
+                    print("Server ID: " .. tostring(entry.serverId))
+                    print("Local Player Index: " .. tostring(entry.player))
+                else
+                    print("No player selected.")
+                end
+            end
+        }
+    }
+
+    Menu.Categories = Menu.Categories or {}
+
+    local playersCategory = nil
+    for _, category in ipairs(Menu.Categories) do
+        if category.name == "Players" then
+            playersCategory = category
+            break
+        end
+    end
+
+    if not playersCategory then
+        playersCategory = {
+            name = "Players",
+            hasTabs = true,
+            tabs = {}
+        }
+        table.insert(Menu.Categories, playersCategory)
+    end
+
+    playersCategory.hasTabs = true
+    playersCategory.tabs = playersCategory.tabs or {}
+
+    local listTab = nil
+    for _, tab in ipairs(playersCategory.tabs) do
+        if tab.name == "List" then
+            listTab = tab
+            break
+        end
+    end
+
+    if not listTab then
+        listTab = {
+            name = "List",
+            items = playerItems
+        }
+        table.insert(playersCategory.tabs, listTab)
+    else
+        listTab.items = playerItems
+    end
+end
+
+CreateThread(function()
+    Wait(700)
+    Menu.AddPlayerListMenu()
 end)
 
 
