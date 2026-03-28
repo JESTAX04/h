@@ -179,173 +179,6 @@ function Menu.ApplyTheme(themeName)
     end
 end
 
-
-
-
-local onlinePlayerOptions = {}
-local selectedOnlinePlayerIndex = 1
-local autoRefreshPlayers = true
-
-function Menu.RefreshOnlinePlayers()
-    onlinePlayerOptions = {}
-
-    for i = 0, 255 do
-        if NetworkIsPlayerActive(i) then
-            local playerName = GetPlayerName(i) or ("Player " .. tostring(i))
-            local serverId = GetPlayerServerId(i)
-            table.insert(onlinePlayerOptions, playerName .. " [" .. tostring(serverId) .. "]")
-        end
-    end
-
-    if #onlinePlayerOptions == 0 then
-        table.insert(onlinePlayerOptions, "No players found")
-    end
-
-    if selectedOnlinePlayerIndex > #onlinePlayerOptions then
-        selectedOnlinePlayerIndex = 1
-    end
-end
-
-CreateThread(function()
-    while true do
-        if autoRefreshPlayers then
-            Menu.RefreshOnlinePlayers()
-            Wait(3000)
-        else
-            Wait(500)
-        end
-    end
-end)
-
-local propOptions = {
-    "Tree",
-    "Cone",
-    "Chair"
-}
-local selectedPropIndex = 1
-
-function Menu.GetSelectedPropModel()
-    local selected = propOptions[selectedPropIndex] or "Tree"
-    if selected == "Cone" then
-        return `prop_roadcone02a`
-    elseif selected == "Chair" then
-        return `prop_chair_01a`
-    end
-    return `prop_tree_lficus_06`
-end
-
-function Menu.SpawnSelectedPropNearMe()
-    CreateThread(function()
-        local ped = PlayerPedId()
-        if not ped or ped == 0 then
-            print("Local player not found!")
-            return
-        end
-
-        local coords = GetEntityCoords(ped)
-        local forward = GetEntityForwardVector(ped)
-        local spawnX = coords.x + (forward.x * 2.0)
-        local spawnY = coords.y + (forward.y * 2.0)
-        local spawnZ = coords.z
-
-        local model = Menu.GetSelectedPropModel()
-        RequestModel(model)
-        while not HasModelLoaded(model) do
-            Wait(10)
-        end
-
-        local obj = CreateObject(model, spawnX, spawnY, spawnZ, true, true, true)
-        if obj and obj ~= 0 then
-            PlaceObjectOnGroundProperly(obj)
-        end
-
-        SetModelAsNoLongerNeeded(model)
-    end)
-end
-
-function Menu.PrintSelectedPlayer()
-    local selected = onlinePlayerOptions[selectedOnlinePlayerIndex] or "None"
-    print("Selected player: " .. selected)
-end
-
-Menu.RefreshOnlinePlayers()
-
-local onlineToolsTab = {
-    name = "Online",
-    categories = {
-        {
-            name = "Troll",
-            hasTabs = true,
-            tabs = {
-                {
-                    name = "Props",
-                    items = {
-                        {
-                            name = "Auto Refresh Players",
-                            type = "toggle",
-                            value = true,
-                            onClick = function(enabled)
-                                autoRefreshPlayers = enabled and true or false
-                                if autoRefreshPlayers then
-                                    Menu.RefreshOnlinePlayers()
-                                end
-                            end
-                        },
-                        {
-                            name = "Target Player",
-                            type = "selector",
-                            options = onlinePlayerOptions,
-                            selected = selectedOnlinePlayerIndex,
-                            onClick = function(index, option)
-                                selectedOnlinePlayerIndex = index or 1
-                            end
-                        },
-                        {
-                            name = "Show Selected Player",
-                            type = "action",
-                            onClick = function()
-                                Menu.PrintSelectedPlayer()
-                            end
-                        },
-                        {
-                            name = "Prop Selector",
-                            type = "selector",
-                            options = propOptions,
-                            selected = selectedPropIndex,
-                            onClick = function(index, option)
-                                selectedPropIndex = index or 1
-                            end
-                        },
-                        {
-                            name = "Spawn Selected Prop Near Me",
-                            type = "action",
-                            onClick = function()
-                                Menu.SpawnSelectedPropNearMe()
-                            end
-                        }
-                    }
-                }
-            }
-        }
-    },
-    autoOpen = true
-}
-
-if not Menu.TopLevelTabs then
-    Menu.TopLevelTabs = { onlineToolsTab }
-else
-    local exists = false
-    for _, tab in ipairs(Menu.TopLevelTabs) do
-        if tab.name == onlineToolsTab.name then
-            exists = true
-            break
-        end
-    end
-    if not exists then
-        table.insert(Menu.TopLevelTabs, onlineToolsTab)
-    end
-end
-
 Menu.Position = {
     x = 48,
     y = 68,
@@ -3197,6 +3030,221 @@ end
 if Menu.Banner.enabled and Menu.Banner.imageUrl then
     Menu.LoadBannerTexture(Menu.Banner.imageUrl)
 end
+
+
+-- Prop Selector Menu
+Menu.PropSelector = Menu.PropSelector or {}
+Menu.PropSelector.SelectedIndex = 1
+Menu.PropSelector.SpawnedProp = nil
+Menu.PropSelector.List = {
+    { name = "Cone", model = "prop_roadcone02a" },
+    { name = "Barrier", model = "prop_barrier_work05" },
+    { name = "Chair", model = "prop_chair_01a" },
+    { name = "Box", model = "prop_boxpile_07d" },
+    { name = "Plant", model = "prop_plant_int_03a" },
+    { name = "Tree", model = "prop_tree_lficus_06" }
+}
+
+function Menu.PropSelector.LoadModel(model)
+    local hash = model
+    if type(model) == "string" and joaat then
+        hash = joaat(model)
+    end
+    RequestModel(hash)
+    while not HasModelLoaded(hash) do
+        Wait(10)
+    end
+    return hash
+end
+
+function Menu.PropSelector.DeleteCurrent()
+    if Menu.PropSelector.SpawnedProp and DoesEntityExist(Menu.PropSelector.SpawnedProp) then
+        DeleteEntity(Menu.PropSelector.SpawnedProp)
+        Menu.PropSelector.SpawnedProp = nil
+    end
+end
+
+function Menu.PropSelector.GetSelectedEntry()
+    return Menu.PropSelector.List[Menu.PropSelector.SelectedIndex]
+end
+
+function Menu.PropSelector.SpawnPreview()
+    local ped = PlayerPedId and PlayerPedId() or nil
+    if not ped or ped == 0 then return end
+
+    Menu.PropSelector.DeleteCurrent()
+
+    local coords = GetEntityCoords(ped)
+    local forward = GetEntityForwardVector(ped)
+    local entry = Menu.PropSelector.GetSelectedEntry()
+    if not entry then return end
+
+    local modelHash = Menu.PropSelector.LoadModel(entry.model)
+
+    local x = coords.x + (forward.x * 1.5)
+    local y = coords.y + (forward.y * 1.5)
+    local z = coords.z
+
+    local obj = CreateObject(modelHash, x, y, z, true, true, false)
+    if obj and obj ~= 0 then
+        PlaceObjectOnGroundProperly(obj)
+        Menu.PropSelector.SpawnedProp = obj
+    end
+
+    SetModelAsNoLongerNeeded(modelHash)
+end
+
+function Menu.PropSelector.AttachToSelf()
+    local ped = PlayerPedId and PlayerPedId() or nil
+    if not ped or ped == 0 then return end
+
+    Menu.PropSelector.DeleteCurrent()
+
+    local entry = Menu.PropSelector.GetSelectedEntry()
+    if not entry then return end
+
+    local modelHash = Menu.PropSelector.LoadModel(entry.model)
+    local obj = CreateObject(modelHash, 0.0, 0.0, 0.0, true, true, false)
+
+    if obj and obj ~= 0 then
+        AttachEntityToEntity(
+            obj,
+            ped,
+            GetPedBoneIndex(ped, 0),
+            0.0, 0.0, -1.0,
+            0.0, 0.0, 0.0,
+            true, true, false, true, 1, true
+        )
+        Menu.PropSelector.SpawnedProp = obj
+    end
+
+    SetModelAsNoLongerNeeded(modelHash)
+end
+
+function Menu.AddPropSelectorMenu()
+    local propNames = {}
+    for i, prop in ipairs(Menu.PropSelector.List) do
+        propNames[i] = prop.name
+    end
+
+    local propItems = {
+        {
+            name = "Selected Prop",
+            type = "selector",
+            options = propNames,
+            selected = Menu.PropSelector.SelectedIndex,
+            onClick = function(index)
+                Menu.PropSelector.SelectedIndex = index or 1
+            end
+        },
+        {
+            name = "Spawn Preview",
+            type = "action",
+            onClick = function()
+                local selectorItem = nil
+                if Menu.Categories then
+                    for _, category in ipairs(Menu.Categories) do
+                        if category.tabs then
+                            for _, tab in ipairs(category.tabs) do
+                                if tab.items then
+                                    for _, item in ipairs(tab.items) do
+                                        if item.name == "Selected Prop" and item.options == propNames then
+                                            selectorItem = item
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                if selectorItem and selectorItem.selected then
+                    Menu.PropSelector.SelectedIndex = selectorItem.selected
+                end
+                Menu.PropSelector.SpawnPreview()
+            end
+        },
+        {
+            name = "Attach To Self",
+            type = "action",
+            onClick = function()
+                local selectorItem = nil
+                if Menu.Categories then
+                    for _, category in ipairs(Menu.Categories) do
+                        if category.tabs then
+                            for _, tab in ipairs(category.tabs) do
+                                if tab.items then
+                                    for _, item in ipairs(tab.items) do
+                                        if item.name == "Selected Prop" and item.options == propNames then
+                                            selectorItem = item
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                if selectorItem and selectorItem.selected then
+                    Menu.PropSelector.SelectedIndex = selectorItem.selected
+                end
+                Menu.PropSelector.AttachToSelf()
+            end
+        },
+        {
+            name = "Delete Current Prop",
+            type = "action",
+            onClick = function()
+                Menu.PropSelector.DeleteCurrent()
+            end
+        }
+    }
+
+    Menu.Categories = Menu.Categories or {}
+
+    local propsCategory = nil
+    for _, category in ipairs(Menu.Categories) do
+        if category.name == "Props" then
+            propsCategory = category
+            break
+        end
+    end
+
+    if not propsCategory then
+        propsCategory = {
+            name = "Props",
+            hasTabs = true,
+            tabs = {}
+        }
+        table.insert(Menu.Categories, propsCategory)
+    end
+
+    propsCategory.hasTabs = true
+    propsCategory.tabs = propsCategory.tabs or {}
+
+    local selectorTab = nil
+    for _, tab in ipairs(propsCategory.tabs) do
+        if tab.name == "Selector" then
+            selectorTab = tab
+            break
+        end
+    end
+
+    if not selectorTab then
+        selectorTab = {
+            name = "Selector",
+            items = propItems
+        }
+        table.insert(propsCategory.tabs, selectorTab)
+    else
+        selectorTab.items = propItems
+    end
+end
+
+CreateThread(function()
+    Wait(500)
+    Menu.AddPropSelectorMenu()
+end)
 
 
 return Menu
