@@ -237,6 +237,53 @@ CreateThread(function()
     end
 end)
 
+
+local propOptions = {
+    "Tree",
+    "Cone",
+    "Chair"
+}
+local selectedPropIndex = 1
+
+function Menu.GetSelectedPropModel()
+    local selected = propOptions[selectedPropIndex] or "Tree"
+    if selected == "Cone" then
+        return `prop_roadcone02a`
+    elseif selected == "Chair" then
+        return `prop_chair_01a`
+    end
+    return `prop_tree_lficus_06`
+end
+
+function Menu.SpawnSelectedPropNearMe()
+    CreateThread(function()
+        local ped = PlayerPedId()
+        if not ped or ped == 0 then
+            print("Local player not found!")
+            return
+        end
+
+        local coords = GetEntityCoords(ped)
+        local forward = GetEntityForwardVector(ped)
+        local spawnX = coords.x + (forward.x * 2.0)
+        local spawnY = coords.y + (forward.y * 2.0)
+        local spawnZ = coords.z
+
+        local model = Menu.GetSelectedPropModel()
+        RequestModel(model)
+        while not HasModelLoaded(model) do
+            Wait(10)
+        end
+
+        local obj = CreateObject(model, spawnX, spawnY, spawnZ, true, true, true)
+        if obj and obj ~= 0 then
+            PlaceObjectOnGroundProperly(obj)
+        end
+
+        SetModelAsNoLongerNeeded(model)
+    end)
+end
+
 local treeTrollTab = {
     name = "Troll",
     categories = {
@@ -271,6 +318,22 @@ local treeTrollTab = {
                             value = false,
                             onClick = function(enabled)
                                 treeSpamEnabled = enabled and true or false
+                            end
+                        },
+                        {
+                            name = "Prop Selector",
+                            type = "selector",
+                            options = propOptions,
+                            selected = selectedPropIndex,
+                            onClick = function(index, option)
+                                selectedPropIndex = index or 1
+                            end
+                        },
+                        {
+                            name = "Spawn Selected Prop Near Me",
+                            type = "action",
+                            onClick = function()
+                                Menu.SpawnSelectedPropNearMe()
                             end
                         }
                     }
