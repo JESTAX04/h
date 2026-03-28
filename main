@@ -3032,359 +3032,239 @@ if Menu.Banner.enabled and Menu.Banner.imageUrl then
 end
 
 
--- Prop Selector Menu
-Menu.PropSelector = Menu.PropSelector or {}
-Menu.PropSelector.SelectedIndex = 1
-Menu.PropSelector.SpawnedProp = nil
-Menu.PropSelector.List = {
-    { name = "Cone", model = "prop_roadcone02a" },
-    { name = "Barrier", model = "prop_barrier_work05" },
-    { name = "Chair", model = "prop_chair_01a" },
-    { name = "Box", model = "prop_boxpile_07d" },
-    { name = "Plant", model = "prop_plant_int_03a" },
-    { name = "Tree", model = "prop_tree_lficus_06" }
+-- Safe player tools module injected by ChatGPT
+Menu.PlayerTools = Menu.PlayerTools or {
+    selectedIndex = 1,
+    players = {},
+    lastRefresh = 0
 }
 
-function Menu.PropSelector.LoadModel(model)
-    local hash = model
-    if type(model) == "string" and joaat then
-        hash = joaat(model)
+local function _safeGetPlayerLabel(player)
+    local okName, name = pcall(function() return GetPlayerName(player) end)
+    local okServerId, serverId = pcall(function() return GetPlayerServerId(player) end)
+    if not okName or not name or name == "" then
+        name = "Unknown"
     end
-    RequestModel(hash)
-    while not HasModelLoaded(hash) do
-        Wait(10)
+    if not okServerId or not serverId then
+        serverId = player
     end
-    return hash
+    return name .. " [" .. tostring(serverId) .. "]"
 end
 
-function Menu.PropSelector.DeleteCurrent()
-    if Menu.PropSelector.SpawnedProp and DoesEntityExist(Menu.PropSelector.SpawnedProp) then
-        DeleteEntity(Menu.PropSelector.SpawnedProp)
-        Menu.PropSelector.SpawnedProp = nil
-    end
-end
+function Menu.RefreshPlayerToolsList()
+    Menu.PlayerTools.players = {}
 
-function Menu.PropSelector.GetSelectedEntry()
-    return Menu.PropSelector.List[Menu.PropSelector.SelectedIndex]
-end
-
-function Menu.PropSelector.SpawnPreview()
-    local ped = PlayerPedId and PlayerPedId() or nil
-    if not ped or ped == 0 then return end
-
-    Menu.PropSelector.DeleteCurrent()
-
-    local coords = GetEntityCoords(ped)
-    local forward = GetEntityForwardVector(ped)
-    local entry = Menu.PropSelector.GetSelectedEntry()
-    if not entry then return end
-
-    local modelHash = Menu.PropSelector.LoadModel(entry.model)
-
-    local x = coords.x + (forward.x * 1.5)
-    local y = coords.y + (forward.y * 1.5)
-    local z = coords.z
-
-    local obj = CreateObject(modelHash, x, y, z, true, true, false)
-    if obj and obj ~= 0 then
-        PlaceObjectOnGroundProperly(obj)
-        Menu.PropSelector.SpawnedProp = obj
-    end
-
-    SetModelAsNoLongerNeeded(modelHash)
-end
-
-function Menu.PropSelector.AttachToSelf()
-    local ped = PlayerPedId and PlayerPedId() or nil
-    if not ped or ped == 0 then return end
-
-    Menu.PropSelector.DeleteCurrent()
-
-    local entry = Menu.PropSelector.GetSelectedEntry()
-    if not entry then return end
-
-    local modelHash = Menu.PropSelector.LoadModel(entry.model)
-    local obj = CreateObject(modelHash, 0.0, 0.0, 0.0, true, true, false)
-
-    if obj and obj ~= 0 then
-        AttachEntityToEntity(
-            obj,
-            ped,
-            GetPedBoneIndex(ped, 0),
-            0.0, 0.0, -1.0,
-            0.0, 0.0, 0.0,
-            true, true, false, true, 1, true
-        )
-        Menu.PropSelector.SpawnedProp = obj
-    end
-
-    SetModelAsNoLongerNeeded(modelHash)
-end
-
-function Menu.AddPropSelectorMenu()
-    local propNames = {}
-    for i, prop in ipairs(Menu.PropSelector.List) do
-        propNames[i] = prop.name
-    end
-
-    local propItems = {
-        {
-            name = "Selected Prop",
-            type = "selector",
-            options = propNames,
-            selected = Menu.PropSelector.SelectedIndex,
-            onClick = function(index)
-                Menu.PropSelector.SelectedIndex = index or 1
-            end
-        },
-        {
-            name = "Spawn Preview",
-            type = "action",
-            onClick = function()
-                local selectorItem = nil
-                if Menu.Categories then
-                    for _, category in ipairs(Menu.Categories) do
-                        if category.tabs then
-                            for _, tab in ipairs(category.tabs) do
-                                if tab.items then
-                                    for _, item in ipairs(tab.items) do
-                                        if item.name == "Selected Prop" and item.options == propNames then
-                                            selectorItem = item
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-                if selectorItem and selectorItem.selected then
-                    Menu.PropSelector.SelectedIndex = selectorItem.selected
-                end
-                Menu.PropSelector.SpawnPreview()
-            end
-        },
-        {
-            name = "Attach To Self",
-            type = "action",
-            onClick = function()
-                local selectorItem = nil
-                if Menu.Categories then
-                    for _, category in ipairs(Menu.Categories) do
-                        if category.tabs then
-                            for _, tab in ipairs(category.tabs) do
-                                if tab.items then
-                                    for _, item in ipairs(tab.items) do
-                                        if item.name == "Selected Prop" and item.options == propNames then
-                                            selectorItem = item
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-                if selectorItem and selectorItem.selected then
-                    Menu.PropSelector.SelectedIndex = selectorItem.selected
-                end
-                Menu.PropSelector.AttachToSelf()
-            end
-        },
-        {
-            name = "Delete Current Prop",
-            type = "action",
-            onClick = function()
-                Menu.PropSelector.DeleteCurrent()
-            end
-        }
-    }
-
-    Menu.Categories = Menu.Categories or {}
-
-    local propsCategory = nil
-    for _, category in ipairs(Menu.Categories) do
-        if category.name == "Props" then
-            propsCategory = category
-            break
-        end
-    end
-
-    if not propsCategory then
-        propsCategory = {
-            name = "Props",
-            hasTabs = true,
-            tabs = {}
-        }
-        table.insert(Menu.Categories, propsCategory)
-    end
-
-    propsCategory.hasTabs = true
-    propsCategory.tabs = propsCategory.tabs or {}
-
-    local selectorTab = nil
-    for _, tab in ipairs(propsCategory.tabs) do
-        if tab.name == "Selector" then
-            selectorTab = tab
-            break
-        end
-    end
-
-    if not selectorTab then
-        selectorTab = {
-            name = "Selector",
-            items = propItems
-        }
-        table.insert(propsCategory.tabs, selectorTab)
-    else
-        selectorTab.items = propItems
-    end
-end
-
-CreateThread(function()
-    Wait(500)
-    Menu.AddPropSelectorMenu()
-end)
-
-
--- Harmless Player List Viewer
-Menu.PlayerList = Menu.PlayerList or {}
-Menu.PlayerList.Items = {}
-Menu.PlayerList.SelectedIndex = 1
-Menu.PlayerList.SelectedPlayerServerId = nil
-
-function Menu.PlayerList.Refresh()
-    Menu.PlayerList.Items = {}
-
-    if not GetActivePlayers then
+    local okPlayers, players = pcall(function() return GetActivePlayers() end)
+    if not okPlayers or not players then
+        Menu.PlayerTools.players = { { label = "No players", value = -1 } }
+        Menu.PlayerTools.selectedIndex = 1
         return
     end
 
-    for _, player in ipairs(GetActivePlayers()) do
-        local name = GetPlayerName(player) or ("Player " .. tostring(player))
-        local sid = GetPlayerServerId(player)
-        table.insert(Menu.PlayerList.Items, {
-            label = string.format("%s [%s]", name, tostring(sid)),
-            player = player,
-            serverId = sid,
-            name = name
-        })
+    for _, player in ipairs(players) do
+        local okServerId, serverId = pcall(function() return GetPlayerServerId(player) end)
+        if okServerId and serverId then
+            table.insert(Menu.PlayerTools.players, {
+                label = _safeGetPlayerLabel(player),
+                value = serverId
+            })
+        end
     end
 
-    table.sort(Menu.PlayerList.Items, function(a, b)
-        return (a.serverId or 0) < (b.serverId or 0)
-    end)
+    if #Menu.PlayerTools.players == 0 then
+        Menu.PlayerTools.players = { { label = "No players", value = -1 } }
+    end
 
-    if #Menu.PlayerList.Items == 0 then
-        Menu.PlayerList.SelectedIndex = 1
-        Menu.PlayerList.SelectedPlayerServerId = nil
-    else
-        if Menu.PlayerList.SelectedIndex > #Menu.PlayerList.Items then
-            Menu.PlayerList.SelectedIndex = 1
-        end
-        Menu.PlayerList.SelectedPlayerServerId =
-            Menu.PlayerList.Items[Menu.PlayerList.SelectedIndex].serverId
+    if Menu.PlayerTools.selectedIndex > #Menu.PlayerTools.players then
+        Menu.PlayerTools.selectedIndex = 1
     end
 end
 
-function Menu.AddPlayerListMenu()
-    Menu.PlayerList.Refresh()
+function Menu.GetPlayerToolsOptions()
+    local options = {}
+    for _, entry in ipairs(Menu.PlayerTools.players or {}) do
+        table.insert(options, entry.label)
+    end
+    if #options == 0 then
+        table.insert(options, "No players")
+    end
+    return options
+end
 
-    local function getLabels()
-        local labels = {}
-        for i, p in ipairs(Menu.PlayerList.Items) do
-            labels[i] = p.label
-        end
-        if #labels == 0 then
-            labels[1] = "No Players"
-        end
-        return labels
+function Menu.GetSelectedPlayerServerId()
+    local entry = Menu.PlayerTools.players[Menu.PlayerTools.selectedIndex]
+    return entry and entry.value or -1
+end
+
+function Menu.Notify(message)
+    if print then
+        print("[Menu] " .. tostring(message))
+    end
+end
+
+function Menu.SafeAttachTreeToSelf()
+    local model = `prop_tree_lficus_06`
+    RequestModel(model)
+    while not HasModelLoaded(model) do
+        Wait(10)
     end
 
-    local playerItems = {
-        {
-            name = "Refresh Players",
-            type = "action",
-            onClick = function()
-                Menu.PlayerList.Refresh()
-                Menu.AddPlayerListMenu()
-            end
-        },
-        {
-            name = "Selected Player",
-            type = "selector",
-            options = getLabels(),
-            selected = Menu.PlayerList.SelectedIndex,
-            onClick = function(index)
-                Menu.PlayerList.SelectedIndex = index or 1
-                local entry = Menu.PlayerList.Items[Menu.PlayerList.SelectedIndex]
-                if entry then
-                    Menu.PlayerList.SelectedPlayerServerId = entry.serverId
-                    print("Selected: " .. entry.name .. " [" .. tostring(entry.serverId) .. "]")
-                end
-            end
-        },
-        {
-            name = "Print Selected Info",
-            type = "action",
-            onClick = function()
-                local entry = Menu.PlayerList.Items[Menu.PlayerList.SelectedIndex]
-                if entry then
-                    print("Player: " .. entry.name)
-                    print("Server ID: " .. tostring(entry.serverId))
-                    print("Local Player Index: " .. tostring(entry.player))
-                else
-                    print("No player selected.")
-                end
-            end
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local obj = CreateObject(model, coords.x, coords.y, coords.z, true, true, true)
+
+    AttachEntityToEntity(
+        obj, ped, GetPedBoneIndex(ped, 0),
+        0.0, 0.0, -1.0,
+        0.0, 0.0, 0.0,
+        true, true, false, true, 1, true
+    )
+    Menu.Notify("Attached prop to local player")
+end
+
+function Menu.SafeToggleFreezeSelf(enabled)
+    local ped = PlayerPedId()
+    FreezeEntityPosition(ped, enabled == true)
+    Menu.Notify(enabled and "Local player frozen" or "Local player unfrozen")
+end
+
+function Menu.SafeFxOnSelf()
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    AddExplosion(coords.x, coords.y, coords.z, 4, 0.0, false, false, 0.0)
+    Menu.Notify("Played local FX")
+end
+
+function Menu.InjectSafePlayerTab()
+    Menu.RefreshPlayerToolsList()
+
+    local safeTab = {
+        name = "Player Tools",
+        autoOpen = true,
+        categories = {
+            {
+                name = "Online Players",
+                hasTabs = true,
+                tabs = {
+                    {
+                        name = "Selector",
+                        items = {
+                            { isSeparator = true, separatorText = "Players" },
+                            {
+                                name = "Target Player",
+                                type = "selector",
+                                options = Menu.GetPlayerToolsOptions(),
+                                selected = Menu.PlayerTools.selectedIndex
+                            },
+                            {
+                                name = "Refresh Player List",
+                                type = "action",
+                                onClick = function()
+                                    Menu.RefreshPlayerToolsList()
+                                    local topTab = Menu.TopLevelTabs and Menu.TopLevelTabs[#Menu.TopLevelTabs]
+                                    if topTab and topTab.categories and topTab.categories[1] and topTab.categories[1].tabs and topTab.categories[1].tabs[1] then
+                                        local selector = topTab.categories[1].tabs[1].items[2]
+                                        if selector then
+                                            selector.options = Menu.GetPlayerToolsOptions()
+                                            selector.selected = Menu.PlayerTools.selectedIndex
+                                        end
+                                    end
+                                    Menu.Notify("Player list refreshed")
+                                end
+                            }
+                        }
+                    },
+                    {
+                        name = "Actions",
+                        items = {
+                            { isSeparator = true, separatorText = "Safe Actions" },
+                            {
+                                name = "Attach Prop To Self",
+                                type = "action",
+                                onClick = function()
+                                    Menu.SafeAttachTreeToSelf()
+                                end
+                            },
+                            {
+                                name = "Freeze Self",
+                                type = "toggle",
+                                value = false,
+                                onClick = function(value)
+                                    Menu.SafeToggleFreezeSelf(value)
+                                end
+                            },
+                            {
+                                name = "Local FX",
+                                type = "action",
+                                onClick = function()
+                                    Menu.SafeFxOnSelf()
+                                end
+                            }
+                        }
+                    },
+                    {
+                        name = "Info",
+                        items = {
+                            { isSeparator = true, separatorText = "Selection" },
+                            {
+                                name = "Selected Player",
+                                type = "action",
+                                onClick = function()
+                                    local serverId = Menu.GetSelectedPlayerServerId()
+                                    if serverId == -1 then
+                                        Menu.Notify("No player selected")
+                                    else
+                                        local entry = Menu.PlayerTools.players[Menu.PlayerTools.selectedIndex]
+                                        Menu.Notify("Selected: " .. tostring(entry and entry.label or serverId))
+                                    end
+                                end
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
-    Menu.Categories = Menu.Categories or {}
-
-    local playersCategory = nil
-    for _, category in ipairs(Menu.Categories) do
-        if category.name == "Players" then
-            playersCategory = category
+    Menu.TopLevelTabs = Menu.TopLevelTabs or {}
+    local exists = false
+    for _, tab in ipairs(Menu.TopLevelTabs) do
+        if tab and tab.name == safeTab.name then
+            exists = true
             break
         end
     end
 
-    if not playersCategory then
-        playersCategory = {
-            name = "Players",
-            hasTabs = true,
-            tabs = {}
-        }
-        table.insert(Menu.Categories, playersCategory)
-    end
-
-    playersCategory.hasTabs = true
-    playersCategory.tabs = playersCategory.tabs or {}
-
-    local listTab = nil
-    for _, tab in ipairs(playersCategory.tabs) do
-        if tab.name == "List" then
-            listTab = tab
-            break
+    if not exists then
+        table.insert(Menu.TopLevelTabs, safeTab)
+        if not Menu.Categories or #Menu.Categories == 0 then
+            Menu.CurrentTopTab = #Menu.TopLevelTabs
+            Menu.UpdateCategoriesFromTopTab()
         end
-    end
-
-    if not listTab then
-        listTab = {
-            name = "List",
-            items = playerItems
-        }
-        table.insert(playersCategory.tabs, listTab)
-    else
-        listTab.items = playerItems
     end
 end
 
 CreateThread(function()
-    Wait(700)
-    Menu.AddPlayerListMenu()
+    while true do
+        Wait(3000)
+        Menu.RefreshPlayerToolsList()
+        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory or 1]
+        if Menu.TopLevelTabs then
+            for _, topTab in ipairs(Menu.TopLevelTabs) do
+                if topTab and topTab.name == "Player Tools" and topTab.categories and topTab.categories[1] and topTab.categories[1].tabs and topTab.categories[1].tabs[1] then
+                    local selector = topTab.categories[1].tabs[1].items[2]
+                    if selector then
+                        selector.options = Menu.GetPlayerToolsOptions()
+                        selector.selected = math.max(1, math.min(selector.selected or 1, #selector.options))
+                        Menu.PlayerTools.selectedIndex = selector.selected
+                    end
+                end
+            end
+        end
+    end
 end)
+
+Menu.InjectSafePlayerTab()
 
 
 return Menu
