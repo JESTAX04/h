@@ -3094,6 +3094,15 @@ function Menu.PropSelector.SpawnPreview()
     SetModelAsNoLongerNeeded(modelHash)
 end
 
+Menu.PropSelector.Bones = {
+    { name = "Root", bone = 0, offset = { x = 0.0, y = 0.0, z = -1.0 }, rot = { x = 0.0, y = 0.0, z = 0.0 } },
+    { name = "Head", bone = 31086, offset = { x = 0.0, y = 0.0, z = 0.2 }, rot = { x = 0.0, y = 0.0, z = 0.0 } },
+    { name = "Right Hand", bone = 57005, offset = { x = 0.08, y = 0.0, z = 0.0 }, rot = { x = 0.0, y = 90.0, z = 0.0 } },
+    { name = "Left Hand", bone = 18905, offset = { x = 0.08, y = 0.0, z = 0.0 }, rot = { x = 0.0, y = 90.0, z = 0.0 } },
+    { name = "Spine", bone = 24818, offset = { x = 0.0, y = 0.0, z = 0.0 }, rot = { x = 0.0, y = 0.0, z = 0.0 } }
+}
+Menu.PropSelector.SelectedBoneIndex = 1
+
 function Menu.PropSelector.AttachToSelf()
     local ped = PlayerPedId and PlayerPedId() or nil
     if not ped or ped == 0 then return end
@@ -3103,6 +3112,7 @@ function Menu.PropSelector.AttachToSelf()
     local entry = Menu.PropSelector.GetSelectedEntry()
     if not entry then return end
 
+    local boneEntry = Menu.PropSelector.Bones[Menu.PropSelector.SelectedBoneIndex] or Menu.PropSelector.Bones[1]
     local modelHash = Menu.PropSelector.LoadModel(entry.model)
     local obj = CreateObject(modelHash, 0.0, 0.0, 0.0, true, true, false)
 
@@ -3110,9 +3120,9 @@ function Menu.PropSelector.AttachToSelf()
         AttachEntityToEntity(
             obj,
             ped,
-            GetPedBoneIndex(ped, 0),
-            0.0, 0.0, -1.0,
-            0.0, 0.0, 0.0,
+            GetPedBoneIndex(ped, boneEntry.bone),
+            boneEntry.offset.x, boneEntry.offset.y, boneEntry.offset.z,
+            boneEntry.rot.x, boneEntry.rot.y, boneEntry.rot.z,
             true, true, false, true, 1, true
         )
         Menu.PropSelector.SpawnedProp = obj
@@ -3162,6 +3172,15 @@ function Menu.AddPropSelectorMenu()
                     Menu.PropSelector.SelectedIndex = selectorItem.selected
                 end
                 Menu.PropSelector.SpawnPreview()
+            end
+        },
+        {
+            name = "Attach Bone",
+            type = "selector",
+            options = { "Root", "Head", "Right Hand", "Left Hand", "Spine" },
+            selected = Menu.PropSelector.SelectedBoneIndex,
+            onClick = function(index)
+                Menu.PropSelector.SelectedBoneIndex = index or 1
             end
         },
         {
