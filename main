@@ -319,7 +319,12 @@ local treeTrollTab = {
                             onClick = function(enabled)
                                 treeSpamEnabled = enabled and true or false
                             end
-                        },
+                        }
+                    }
+                },
+                {
+                    name = "Props",
+                    items = {
                         {
                             name = "Prop Selector",
                             type = "selector",
