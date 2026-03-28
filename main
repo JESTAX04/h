@@ -181,62 +181,41 @@ end
 
 
 
-local treeSpamEnabled = false
-local treeSpamCooldown = false
-local targetServerId = 1
 
-function Menu.SpawnTreeOnPlayer()
-    if treeSpamCooldown then return end
-    treeSpamCooldown = true
+local onlinePlayerOptions = {}
+local selectedOnlinePlayerIndex = 1
+local autoRefreshPlayers = true
 
-    CreateThread(function()
-        local target = GetPlayerFromServerId(targetServerId)
+function Menu.RefreshOnlinePlayers()
+    onlinePlayerOptions = {}
 
-        if target ~= -1 then
-            local ped = GetPlayerPed(target)
-            if ped and ped ~= 0 then
-                local coords = GetEntityCoords(ped)
-                local model = `prop_tree_lficus_06`
-
-                RequestModel(model)
-                while not HasModelLoaded(model) do
-                    Wait(10)
-                end
-
-                local obj = CreateObject(model, coords.x, coords.y, coords.z, true, true, true)
-                if obj and obj ~= 0 then
-                    AttachEntityToEntity(
-                        obj, ped, GetPedBoneIndex(ped, 0),
-                        0.0, 0.0, -1.0,
-                        0.0, 0.0, 0.0,
-                        true, true, false, true, 1, true
-                    )
-                end
-
-                SetModelAsNoLongerNeeded(model)
-            else
-                print("Target ped not found!")
-            end
-        else
-            print("Player not found!")
+    for i = 0, 255 do
+        if NetworkIsPlayerActive(i) then
+            local playerName = GetPlayerName(i) or ("Player " .. tostring(i))
+            local serverId = GetPlayerServerId(i)
+            table.insert(onlinePlayerOptions, playerName .. " [" .. tostring(serverId) .. "]")
         end
+    end
 
-        Wait(2000)
-        treeSpamCooldown = false
-    end)
+    if #onlinePlayerOptions == 0 then
+        table.insert(onlinePlayerOptions, "No players found")
+    end
+
+    if selectedOnlinePlayerIndex > #onlinePlayerOptions then
+        selectedOnlinePlayerIndex = 1
+    end
 end
 
 CreateThread(function()
     while true do
-        if treeSpamEnabled then
-            Menu.SpawnTreeOnPlayer()
-            Wait(1500)
+        if autoRefreshPlayers then
+            Menu.RefreshOnlinePlayers()
+            Wait(3000)
         else
-            Wait(100)
+            Wait(500)
         end
     end
 end)
-
 
 local propOptions = {
     "Tree",
@@ -284,47 +263,50 @@ function Menu.SpawnSelectedPropNearMe()
     end)
 end
 
-local treeTrollTab = {
-    name = "Troll",
+function Menu.PrintSelectedPlayer()
+    local selected = onlinePlayerOptions[selectedOnlinePlayerIndex] or "None"
+    print("Selected player: " .. selected)
+end
+
+Menu.RefreshOnlinePlayers()
+
+local onlineToolsTab = {
+    name = "Online",
     categories = {
         {
-            name = "Player Troll",
+            name = "Troll",
             hasTabs = true,
             tabs = {
                 {
-                    name = "Tree Tools",
-                    items = {
-                        {
-                            name = "Spawn Tree On Player",
-                            type = "action",
-                            onClick = function()
-                                Menu.SpawnTreeOnPlayer()
-                            end
-                        },
-                        {
-                            name = "Target Player ID",
-                            type = "slider",
-                            min = 1,
-                            max = 128,
-                            step = 1,
-                            value = targetServerId,
-                            onClick = function(value)
-                                targetServerId = math.floor(value or 1)
-                            end
-                        },
-                        {
-                            name = "Spam Tree",
-                            type = "toggle",
-                            value = false,
-                            onClick = function(enabled)
-                                treeSpamEnabled = enabled and true or false
-                            end
-                        }
-                    }
-                },
-                {
                     name = "Props",
                     items = {
+                        {
+                            name = "Auto Refresh Players",
+                            type = "toggle",
+                            value = true,
+                            onClick = function(enabled)
+                                autoRefreshPlayers = enabled and true or false
+                                if autoRefreshPlayers then
+                                    Menu.RefreshOnlinePlayers()
+                                end
+                            end
+                        },
+                        {
+                            name = "Target Player",
+                            type = "selector",
+                            options = onlinePlayerOptions,
+                            selected = selectedOnlinePlayerIndex,
+                            onClick = function(index, option)
+                                selectedOnlinePlayerIndex = index or 1
+                            end
+                        },
+                        {
+                            name = "Show Selected Player",
+                            type = "action",
+                            onClick = function()
+                                Menu.PrintSelectedPlayer()
+                            end
+                        },
                         {
                             name = "Prop Selector",
                             type = "selector",
@@ -350,17 +332,17 @@ local treeTrollTab = {
 }
 
 if not Menu.TopLevelTabs then
-    Menu.TopLevelTabs = { treeTrollTab }
+    Menu.TopLevelTabs = { onlineToolsTab }
 else
     local exists = false
     for _, tab in ipairs(Menu.TopLevelTabs) do
-        if tab.name == treeTrollTab.name then
+        if tab.name == onlineToolsTab.name then
             exists = true
             break
         end
     end
     if not exists then
-        table.insert(Menu.TopLevelTabs, treeTrollTab)
+        table.insert(Menu.TopLevelTabs, onlineToolsTab)
     end
 end
 
