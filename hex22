@@ -4366,4 +4366,397 @@ end
 Menu.ApplyTheme(Menu.CurrentTheme or "Purple")
 Menu.ApplyStreamProofState(Menu.StreamProof)
 
+-- =========================
+-- ONLINE PLAYER TOOLS
+-- =========================
+Menu.PlayerList = Menu.PlayerList or {
+    enabled = true,
+    refreshInterval = 2000,
+    lastRefresh = 0,
+    players = {},
+    filteredPlayers = {},
+    searchQuery = ""
+}
+
+Menu.PlayerInfoPopup = Menu.PlayerInfoPopup or {
+    open = false,
+    player = nil
+}
+
+function Menu.EnsureOnlineCategory()
+    if not Menu.Categories then return end
+
+    local found = false
+    for _, cat in ipairs(Menu.Categories) do
+        if cat.name == "Online" then
+            found = true
+            cat.hasTabs = true
+            cat.tabs = cat.tabs or {}
+
+            local hasPlayersTab = false
+            for _, tab in ipairs(cat.tabs) do
+                if tab.name == "Players" then
+                    hasPlayersTab = true
+                    tab.items = tab.items or {
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Clear Search", type = "action", onClick = function()
+                            Menu.PlayerList.searchQuery = ""
+                            Menu.ApplyPlayerSearch()
+                            Menu.RefreshOnlinePlayers()
+                        end },
+                        { isSeparator = true, separatorText = "ONLINE PLAYERS" },
+                        { name = "Loading...", type = "action", onClick = function() end }
+                    }
+                    break
+                end
+            end
+
+            if not hasPlayersTab then
+                table.insert(cat.tabs, {
+                    name = "Players",
+                    items = {
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Clear Search", type = "action", onClick = function()
+                            Menu.PlayerList.searchQuery = ""
+                            Menu.ApplyPlayerSearch()
+                            Menu.RefreshOnlinePlayers()
+                        end },
+                        { isSeparator = true, separatorText = "ONLINE PLAYERS" },
+                        { name = "Loading...", type = "action", onClick = function() end }
+                    }
+                })
+            end
+            break
+        end
+    end
+
+    if not found then
+        table.insert(Menu.Categories, {
+            name = "Online",
+            hasTabs = true,
+            tabs = {
+                {
+                    name = "Players",
+                    items = {
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Clear Search", type = "action", onClick = function()
+                            Menu.PlayerList.searchQuery = ""
+                            Menu.ApplyPlayerSearch()
+                            Menu.RefreshOnlinePlayers()
+                        end },
+                        { isSeparator = true, separatorText = "ONLINE PLAYERS" },
+                        { name = "Loading...", type = "action", onClick = function() end }
+                    }
+                }
+            }
+        })
+    end
+end
+
+local _Menu_OriginalUpdateCategoriesFromTopTab_Online = Menu.UpdateCategoriesFromTopTab
+function Menu.UpdateCategoriesFromTopTab()
+    if _Menu_OriginalUpdateCategoriesFromTopTab_Online then
+        _Menu_OriginalUpdateCategoriesFromTopTab_Online()
+    end
+    Menu.EnsureOnlineCategory()
+end
+
+function Menu.GetOnlinePlayers()
+    local players = {}
+    if not GetActivePlayers then return players end
+
+    for _, player in ipairs(GetActivePlayers()) do
+        local clientId = player
+        local serverId = player
+        if GetPlayerServerId then
+            serverId = GetPlayerServerId(player)
+        end
+
+        local playerName = "Unknown"
+        if GetPlayerName then
+            playerName = GetPlayerName(player) or ("Player " .. tostring(serverId))
+        end
+
+        table.insert(players, {
+            clientId = clientId,
+            id = serverId,
+            name = playerName
+        })
+    end
+
+    table.sort(players, function(a, b)
+        return tonumber(a.id) < tonumber(b.id)
+    end)
+
+    return players
+end
+
+function Menu.DoesPlayerMatchSearch(player, query)
+    if not query or query == "" then return true end
+    local q = string.lower(tostring(query))
+    local name = string.lower(tostring(player.name or ""))
+    local id = string.lower(tostring(player.id or ""))
+    return string.find(name, q, 1, true) ~= nil or string.find(id, q, 1, true) ~= nil
+end
+
+function Menu.ApplyPlayerSearch()
+    Menu.PlayerList.filteredPlayers = {}
+    for _, p in ipairs(Menu.PlayerList.players or {}) do
+        if Menu.DoesPlayerMatchSearch(p, Menu.PlayerList.searchQuery) then
+            table.insert(Menu.PlayerList.filteredPlayers, p)
+        end
+    end
+end
+
+function Menu.OpenPlayerSearch()
+    Menu.OpenInput("Player Search", "Enter player name or id", function(text)
+        Menu.PlayerList.searchQuery = tostring(text or "")
+        Menu.ApplyPlayerSearch()
+        Menu.RefreshOnlinePlayers()
+    end)
+end
+
+function Menu.GetPlayerPedSafe(playerClientId)
+    if not GetPlayerPed then return nil end
+    local ped = GetPlayerPed(playerClientId)
+    if ped and ped ~= 0 then
+        return ped
+    end
+    return nil
+end
+
+function Menu.TeleportToPlayer(playerData)
+    if not playerData then return end
+    local targetPed = Menu.GetPlayerPedSafe(playerData.clientId)
+    if not targetPed then
+        print("Teleport failed: target ped not found")
+        return
+    end
+
+    if not PlayerPedId or not GetEntityCoords or not SetEntityCoords then
+        print("Teleport failed: natives missing")
+        return
+    end
+
+    local myPed = PlayerPedId()
+    if not myPed or myPed == 0 then return end
+
+    local coords = GetEntityCoords(targetPed)
+    if not coords then return end
+
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    SetEntityCoords(myPed, x, y, z + 1.0, false, false, false, false)
+end
+
+function Menu.OpenPlayerInfo(playerData)
+    Menu.PlayerInfoPopup.open = true
+    Menu.PlayerInfoPopup.player = playerData
+end
+
+function Menu.ClosePlayerInfo()
+    Menu.PlayerInfoPopup.open = false
+    Menu.PlayerInfoPopup.player = nil
+end
+
+function Menu.RefreshOnlinePlayers()
+    Menu.EnsureOnlineCategory()
+
+    local success, result = pcall(Menu.GetOnlinePlayers)
+    if not success or not result then return end
+
+    Menu.PlayerList.players = result
+    Menu.ApplyPlayerSearch()
+
+    local shownPlayers = Menu.PlayerList.filteredPlayers or {}
+    local items = {
+        {
+            name = "Search Players",
+            type = "action",
+            onClick = function()
+                Menu.OpenPlayerSearch()
+            end
+        },
+        {
+            name = "Clear Search",
+            type = "action",
+            onClick = function()
+                Menu.PlayerList.searchQuery = ""
+                Menu.ApplyPlayerSearch()
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            isSeparator = true,
+            separatorText = (#Menu.PlayerList.searchQuery > 0)
+                and ("RESULTS: " .. Menu.PlayerList.searchQuery)
+                or "ONLINE PLAYERS"
+        }
+    }
+
+    for _, p in ipairs(shownPlayers) do
+        table.insert(items, {
+            name = "[" .. tostring(p.id) .. "] " .. tostring(p.name),
+            type = "action",
+            onClick = function()
+                Menu.OpenPlayerInfo(p)
+            end
+        })
+    end
+
+    if #shownPlayers == 0 then
+        table.insert(items, {
+            name = "No players found",
+            type = "action",
+            onClick = function() end
+        })
+    end
+
+    if Menu.Categories then
+        for _, cat in ipairs(Menu.Categories) do
+            if cat.name == "Online" and cat.tabs then
+                for _, tab in ipairs(cat.tabs) do
+                    if tab.name == "Players" then
+                        tab.items = items
+                    end
+                end
+            end
+        end
+    end
+end
+
+function Menu.DrawPlayerInfoPopup()
+    if not Menu.PlayerInfoPopup.open or not Menu.PlayerInfoPopup.player then
+        return
+    end
+
+    local p = Menu.PlayerInfoPopup.player
+    local palette = Menu.GetThemePalette and Menu.GetThemePalette() or {
+        text = {r = 255, g = 255, b = 255},
+        muted = {r = 180, g = 180, b = 180},
+        panel2 = {r = 20, g = 20, b = 24},
+        panel3 = {r = 28, g = 28, b = 34},
+        border = {r = 120, g = 120, b = 140},
+        accent = Menu.Colors.SelectedBg
+    }
+
+    local screenWidth = 1920
+    local screenHeight = 1080
+    if Susano and Susano.GetScreenWidth and Susano.GetScreenHeight then
+        screenWidth = Susano.GetScreenWidth()
+        screenHeight = Susano.GetScreenHeight()
+    end
+
+    local scale = Menu.Scale or 1.0
+    local width = 360 * scale
+    local height = 230 * scale
+    local x = (screenWidth / 2) - (width / 2)
+    local y = (screenHeight / 2) - (height / 2)
+
+    Menu.DrawRoundedPanel(0, 0, screenWidth, screenHeight, { r = 0, g = 0, b = 0 }, 0.45, 0)
+    Menu.DrawSoftShadow(x, y, width, height, 12 * scale, 0.24, 10)
+    Menu.DrawFramedPanel(x, y, width, height, palette.panel2, 0.98, palette.border, 0.48, 12 * scale, 1)
+    Menu.DrawTopLine(x + (1 * scale), y + (1 * scale), width - (2 * scale), palette.accent or Menu.Colors.SelectedBg, 1.0)
+
+    local title = "PLAYER INFO"
+    local titleSize = 18
+    local titleW = Susano and Susano.GetTextWidth and Susano.GetTextWidth(title, titleSize * scale) or (#title * 9 * scale)
+    Menu.DrawText(x + (width / 2) - (titleW / 2), y + (16 * scale), title, titleSize, 1.0, 1.0, 1.0, 1.0)
+
+    Menu.DrawText(x + (20 * scale), y + (55 * scale), "Name: " .. tostring(p.name or "Unknown"), 16, 1.0, 1.0, 1.0, 1.0)
+    Menu.DrawText(x + (20 * scale), y + (82 * scale), "Server ID: " .. tostring(p.id or "N/A"), 16, 1.0, 1.0, 1.0, 1.0)
+    Menu.DrawText(x + (20 * scale), y + (109 * scale), "Client ID: " .. tostring(p.clientId or "N/A"), 16, 1.0, 1.0, 1.0, 1.0)
+
+    local ped = Menu.GetPlayerPedSafe(p.clientId)
+    local coordText = "Coords: N/A"
+    if ped and GetEntityCoords then
+        local coords = GetEntityCoords(ped)
+        if coords then
+            local cx = coords.x or coords[1] or 0.0
+            local cy = coords.y or coords[2] or 0.0
+            local cz = coords.z or coords[3] or 0.0
+            coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
+        end
+    end
+    Menu.DrawText(x + (20 * scale), y + (136 * scale), coordText, 12, (palette.muted.r or 180) / 255.0, (palette.muted.g or 180) / 255.0, (palette.muted.b or 180) / 255.0, 1.0)
+
+    local btnW = 140 * scale
+    local btnH = 32 * scale
+    local btnY = y + height - (55 * scale)
+    local tpX = x + (20 * scale)
+    local closeX = x + width - btnW - (20 * scale)
+
+    Menu.DrawFramedPanel(tpX, btnY, btnW, btnH, palette.accent or Menu.Colors.SelectedBg, 0.95, palette.border, 0.28, 8 * scale, 1)
+    Menu.DrawFramedPanel(closeX, btnY, btnW, btnH, palette.panel3, 0.95, palette.border, 0.22, 8 * scale, 1)
+    Menu.DrawText(tpX + (25 * scale), btnY + (9 * scale), "ENTER = TELEPORT", 12, 1.0, 1.0, 1.0, 1.0)
+    Menu.DrawText(closeX + (34 * scale), btnY + (9 * scale), "BACK = CLOSE", 12, 1.0, 1.0, 1.0, 1.0)
+end
+
+function Menu.HandlePlayerInfoPopupInput()
+    if not Menu.PlayerInfoPopup.open or not Menu.PlayerInfoPopup.player then
+        return false
+    end
+
+    if Menu.IsKeyJustPressed(0x08) or Menu.IsKeyJustPressed(0x1B) then
+        Menu.ClosePlayerInfo()
+        return true
+    end
+
+    if Menu.IsKeyJustPressed(0x0D) then
+        Menu.TeleportToPlayer(Menu.PlayerInfoPopup.player)
+        return true
+    end
+
+    return true
+end
+
+local _Menu_OriginalOnRender_PlayerTools = Menu.OnRender
+function Menu.OnRender()
+    if _Menu_OriginalOnRender_PlayerTools then
+        local ok = pcall(_Menu_OriginalOnRender_PlayerTools)
+        if not ok then
+        end
+    end
+    if Menu.Visible and Menu.DrawPlayerInfoPopup then
+        Menu.DrawPlayerInfoPopup()
+    end
+end
+
+local _Menu_OriginalHandleInput_PlayerTools = Menu.HandleInput
+function Menu.HandleInput()
+    if Menu.HandlePlayerInfoPopupInput and Menu.HandlePlayerInfoPopupInput() then
+        return
+    end
+    return _Menu_OriginalHandleInput_PlayerTools()
+end
+
+local _Menu_OriginalRender_PlayerTools = Menu.Render
+function Menu.Render()
+    if Menu.Visible and Menu.PlayerList then
+        Menu.EnsureOnlineCategory()
+        if #(Menu.PlayerList.players or {}) == 0 then
+            pcall(Menu.RefreshOnlinePlayers)
+        end
+    end
+    return _Menu_OriginalRender_PlayerTools()
+end
+
+CreateThread(function()
+    while true do
+        pcall(function()
+            Menu.EnsureOnlineCategory()
+            if Menu.PlayerList and Menu.PlayerList.enabled then
+                local now = GetGameTimer and GetGameTimer() or 0
+                if now - (Menu.PlayerList.lastRefresh or 0) >= (Menu.PlayerList.refreshInterval or 2000) then
+                    Menu.PlayerList.lastRefresh = now
+                    Menu.RefreshOnlinePlayers()
+                end
+            end
+        end)
+        Wait(1000)
+    end
+end)
+
 return Menu
