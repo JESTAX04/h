@@ -2,7 +2,7 @@ local Menu = {}
 Menu.Visible = false
 Menu.CurrentCategory = 1
 Menu.CurrentPage = 1
-Menu.ItemsPerPage = 8
+Menu.ItemsPerPage = 9
 Menu.scrollbarY = nil
 Menu.scrollbarHeight = nil
 Menu.OpenedCategory = nil
@@ -19,7 +19,7 @@ Menu.SelectorY = 0
 Menu.CategorySelectorY = 0
 Menu.TabSelectorX = 0
 Menu.TabSelectorWidth = 0
-Menu.SmoothFactor = 0.20
+Menu.SmoothFactor = 0.24
 Menu.GradientType = 2
 Menu.ScrollbarPosition = 1
 
@@ -122,18 +122,18 @@ function Menu.LoadBannerTexture(url)
 end
 
 Menu.Colors = {
-    HeaderPink = { r = 255, g = 56, b = 106 },
-    SelectedBg = { r = 255, g = 56, b = 106 },
-    TextWhite = { r = 247, g = 248, b = 250 },
-    TextMuted = { r = 136, g = 141, b = 151 },
-    BackgroundDark = { r = 11, g = 12, b = 16 },
-    FooterBlack = { r = 9, g = 10, b = 13 },
-    Border = { r = 33, g = 36, b = 44 },
-    TabInactive = { r = 16, g = 18, b = 23 },
-    ItemBackground = { r = 17, g = 19, b = 24 },
-    ItemSelectedOverlay = { r = 58, g = 22, b = 38 },
-    CardBackground = { r = 18, g = 20, b = 26 },
-    HeaderGlow = { r = 255, g = 94, b = 136 }
+    HeaderPink = { r = 255, g = 64, b = 129 },
+    SelectedBg = { r = 255, g = 64, b = 129 },
+    TextWhite = { r = 250, g = 251, b = 255 },
+    TextMuted = { r = 160, g = 166, b = 180 },
+    BackgroundDark = { r = 8, g = 10, b = 14 },
+    FooterBlack = { r = 6, g = 8, b = 12 },
+    Border = { r = 38, g = 44, b = 56 },
+    TabInactive = { r = 15, g = 18, b = 26 },
+    ItemBackground = { r = 14, g = 17, b = 24 },
+    ItemSelectedOverlay = { r = 75, g = 24, b = 46 },
+    CardBackground = { r = 20, g = 24, b = 34 },
+    HeaderGlow = { r = 255, g = 110, b = 170 }
 }
 
 Menu.CurrentTheme = "Red"
@@ -180,20 +180,20 @@ function Menu.ApplyTheme(themeName)
 end
 
 Menu.Position = {
-    x = 48,
-    y = 68,
-    width = 760,
-    itemHeight = 44,
-    mainMenuHeight = 40,
-    headerHeight = 84,
-    footerHeight = 36,
-    footerSpacing = 8,
-    mainMenuSpacing = 8,
-    footerRadius = 12,
-    itemRadius = 12,
+    x = 42,
+    y = 56,
+    width = 840,
+    itemHeight = 46,
+    mainMenuHeight = 42,
+    headerHeight = 96,
+    footerHeight = 40,
+    footerSpacing = 10,
+    mainMenuSpacing = 10,
+    footerRadius = 14,
+    itemRadius = 14,
     scrollbarWidth = 6,
-    scrollbarPadding = 6,
-    headerRadius = 14
+    scrollbarPadding = 8,
+    headerRadius = 16
 }
 Menu.Scale = 1.0
 
@@ -272,9 +272,12 @@ function Menu.DrawHeader()
     Menu.DrawRect(x + 14, y + 12, width - 28, height - 24, Menu.Colors.CardBackground.r, Menu.Colors.CardBackground.g, Menu.Colors.CardBackground.b, 135)
     Menu.DrawRect(x, y + height - 3, width, 3, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
     Menu.DrawRect(x + 22, y + 18, 3, height - 36, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+    Menu.DrawRect(x + width - 124, y + 18, 92, 24, Menu.Colors.CardBackground.r, Menu.Colors.CardBackground.g, Menu.Colors.CardBackground.b, 220)
+    Menu.DrawRect(x + width - 124, y + 39, 92, 3, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+    Menu.DrawText(x + width - 106, y + 22, "PRO UI", 12, 255, 255, 255, 235)
 
-    Menu.DrawText(x + 40, y + 16, "MACHO", 24, 255, 255, 255, 255)
-    Menu.DrawText(x + 40, y + 48, "premium dark ui", 11, Menu.Colors.TextMuted.r, Menu.Colors.TextMuted.g, Menu.Colors.TextMuted.b, 220)
+    Menu.DrawText(x + 40, y + 16, "MACHO X", 26, 255, 255, 255, 255)
+    Menu.DrawText(x + 40, y + 52, "pro interface", 12, Menu.Colors.TextMuted.r, Menu.Colors.TextMuted.g, Menu.Colors.TextMuted.b, 220)
 end
 
 function Menu.DrawScrollbar(x, startY, visibleHeight, selectedIndex, totalItems, isMainMenu, menuWidth)
@@ -1398,11 +1401,11 @@ function Menu.DrawLoadingBar(alpha)
 
     local loadingText = ""
     if elapsedTime < 1000 then
-        loadingText = "Injecting"
+        loadingText = "Loading UI"
     elseif elapsedTime < 2000 then
-        loadingText = "Have Fun !"
+        loadingText = "Ready"
     else
-        loadingText = "Have Fun !"
+        loadingText = "Ready"
     end
 
     if loadingText ~= "" then
@@ -1526,7 +1529,7 @@ function Menu.DrawFooter()
     local scaledFooterSize = footerSize * scale
     local footerTextY = footerY + (footerHeight / 2) - (scaledFooterSize / 2) + (1 * scale)
 
-    local footerText = " https://discord.gg/zP8MaFP9uM "
+    local footerText = " MACHO X  |  PRO UI "
     local currentX = x + footerPadding
 
     local textWidth = 0
