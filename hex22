@@ -2178,6 +2178,22 @@ function Menu.GetKeyName(keyCode)
     return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
 
+function Menu.GetMousePosition()
+    if Susano and Susano.GetCursorPos then
+        local cursorPos = Susano.GetCursorPos()
+        if cursorPos then
+            if type(cursorPos) == "table" then
+                return cursorPos[1] or cursorPos.x or 0, cursorPos[2] or cursorPos.y or 0
+            else
+                local xOk, x = pcall(function() return cursorPos.x end)
+                local yOk, y = pcall(function() return cursorPos.y end)
+                return (xOk and x) or 0, (yOk and y) or 0
+            end
+        end
+    end
+    return 0, 0
+end
+
 function Menu.HandleInput()
     if Menu.IsLoading or not Menu.LoadingComplete then
         return
@@ -4720,15 +4736,26 @@ function Menu.DrawPlayerInfoPopup()
     local tpX = x + 18
     local trollX = x + (width / 2) - (btnW / 2)
     local closeX = x + width - btnW - 18
+    local mouseX, mouseY = Menu.GetMousePosition()
+    local lmbPressed = Menu.IsKeyJustPressed(0x01)
+    local trollHover = mouseX >= trollX and mouseX <= (trollX + btnW) and mouseY >= btnY and mouseY <= (btnY + btnH)
 
     if Menu.DrawFramedPanel then
         Menu.DrawFramedPanel(tpX, btnY, btnW, btnH, palette.panel3, 0.96, accent, 0.45, 8, 1)
-        Menu.DrawFramedPanel(trollX, btnY, btnW, btnH, { r = 78, g = 24, b = 28 }, 0.96, { r = 210, g = 64, b = 72 }, 0.55, 8, 1)
+        if trollHover then
+            Menu.DrawFramedPanel(trollX, btnY, btnW, btnH, { r = 96, g = 28, b = 34 }, 0.98, { r = 255, g = 92, b = 100 }, 0.72, 8, 1)
+        else
+            Menu.DrawFramedPanel(trollX, btnY, btnW, btnH, { r = 78, g = 24, b = 28 }, 0.96, { r = 210, g = 64, b = 72 }, 0.55, 8, 1)
+        end
         Menu.DrawFramedPanel(closeX, btnY, btnW, btnH, palette.panel3, 0.96, palette.borderDim, 0.22, 8, 1)
     end
     Menu.DrawText(tpX + 26, btnY + 8, "Teleport", 12, 1.0, 1.0, 1.0, 1.0)
     Menu.DrawText(trollX + 34, btnY + 8, "Troll", 12, 1.0, 1.0, 1.0, 1.0)
     Menu.DrawText(closeX + 36, btnY + 8, "Close", 12, 1.0, 1.0, 1.0, 1.0)
+
+    if trollHover and lmbPressed then
+        Menu.TrollPlayer(Menu.PlayerInfoPopup.player)
+    end
 end
 
 function Menu.HandlePlayerInfoPopupInput()
@@ -4743,6 +4770,7 @@ function Menu.HandlePlayerInfoPopupInput()
         Menu.TeleportToPlayer(Menu.PlayerInfoPopup.player)
         return true
     end
+
     return true
 end
 
