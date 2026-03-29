@@ -14005,5 +14005,193 @@ Citizen.CreateThread(function()
         end
     end
 end)
+-- Online > Props patch for hex22
+-- Load this AFTER the main hex22 script, or paste it at the very end of hex22.
+
+local propOptions = {
+    "Ficus Tree",
+    "Traffic Cone",
+    "Barrel",
+    "Beach Ball",
+    "Chair",
+    "Teddy Bear"
+}
+
+local propModels = {
+    [`prop_tree_lficus_06`] = "Ficus Tree",
+    [`prop_roadcone02a`] = "Traffic Cone",
+    [`prop_barrel_02a`] = "Barrel",
+    [`prop_beach_ball_02`] = "Beach Ball",
+    [`prop_chair_01a`] = "Chair",
+    [`v_ilev_mr_rasberryclean`] = "Teddy Bear"
+}
+
+local propModelList = {
+    `prop_tree_lficus_06`,
+    `prop_roadcone02a`,
+    `prop_barrel_02a`,
+    `prop_beach_ball_02`,
+    `prop_chair_01a`,
+    `v_ilev_mr_rasberryclean`
+}
+
+local selectedPropIndex = 1
+
+local function getSelectedPropModel()
+    return propModelList[selectedPropIndex] or `prop_tree_lficus_06`
+end
+
+local function getTargetPlayerFromMenuSelection()
+    local targetServerId = Menu and Menu.SelectedPlayer
+    if not targetServerId then
+        return nil, nil
+    end
+
+    for _, player in ipairs(GetActivePlayers()) do
+        if GetPlayerServerId(player) == targetServerId then
+            return player, targetServerId
+        end
+    end
+
+    return nil, targetServerId
+end
+
+local function attachSelectedPropToSelectedPlayer()
+    CreateThread(function()
+        local targetPlayer, targetServerId = getTargetPlayerFromMenuSelection()
+
+        if not targetServerId then
+            print("[Props] No player selected. Use Online > Player List first.")
+            return
+        end
+
+        if not targetPlayer or targetPlayer == -1 then
+            print("[Props] Selected player not found in session: " .. tostring(targetServerId))
+            return
+        end
+
+        local ped = GetPlayerPed(targetPlayer)
+        if not DoesEntityExist(ped) then
+            print("[Props] Target ped not found!")
+            return
+        end
+
+        local coords = GetEntityCoords(ped)
+        local model = getSelectedPropModel()
+
+        RequestModel(model)
+        while not HasModelLoaded(model) do
+            Wait(10)
+        end
+
+        local obj = CreateObject(model, coords.x, coords.y, coords.z, true, true, true)
+        if not obj or obj == 0 then
+            print("[Props] Failed to create object!")
+            SetModelAsNoLongerNeeded(model)
+            return
+        end
+
+        AttachEntityToEntity(
+            obj,
+            ped,
+            GetPedBoneIndex(ped, 0),
+            0.0, 0.0, -1.0,
+            0.0, 0.0, 0.0,
+            true, true, false, true, 1, true
+        )
+
+        SetModelAsNoLongerNeeded(model)
+        print("[Props] Attached prop to player: " .. tostring(targetServerId))
+    end)
+end
+
+local function showSelectedPlayer()
+    if Menu and Menu.SelectedPlayer then
+        print("[Props] Selected player server ID: " .. tostring(Menu.SelectedPlayer))
+    else
+        print("[Props] No player selected. Use Online > Player List first.")
+    end
+end
+
+local function buildPropsItems()
+    return {
+        {
+            name = "",
+            isSeparator = true,
+            separatorText = "Uses Online > Player List selection"
+        },
+        {
+            name = "Show Selected Player",
+            type = "action",
+            onClick = function()
+                showSelectedPlayer()
+            end
+        },
+        {
+            name = "Prop Selector",
+            type = "selector",
+            options = propOptions,
+            selected = selectedPropIndex,
+            onClick = function(index, option)
+                selectedPropIndex = index or 1
+            end
+        },
+        {
+            name = "Attach Selected Prop To Player",
+            type = "action",
+            onClick = function()
+                attachSelectedPropToSelectedPlayer()
+            end
+        }
+    }
+end
+
+local function ensureOnlinePropsTab()
+    if not Menu or not Menu.Categories or type(Menu.Categories) ~= "table" then
+        return false
+    end
+
+    for _, cat in ipairs(Menu.Categories) do
+        if cat and cat.name == "Online" then
+            cat.tabs = cat.tabs or {}
+
+            for _, tab in ipairs(cat.tabs) do
+                if tab and tab.name == "Props" then
+                    tab.items = buildPropsItems()
+                    return true
+                end
+            end
+
+            table.insert(cat.tabs, {
+                name = "Props",
+                items = buildPropsItems()
+            })
+            return true
+        end
+    end
+
+    return false
+end
+
+CreateThread(function()
+    local tries = 0
+    while tries < 600 do
+        tries = tries + 1
+        if ensureOnlinePropsTab() then
+            print("[Props] Online > Props tab added")
+            break
+        end
+        Wait(500)
+    end
+end)
+
+CreateThread(function()
+    while true do
+        ensureOnlinePropsTab()
+        Wait(2000)
+    end
+end)
+
+
 
 LoadBypasses()
