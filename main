@@ -122,65 +122,49 @@ function Menu.LoadBannerTexture(url)
 end
 
 Menu.Colors = {
-    HeaderPink = { r = 170, g = 60, b = 255 },
-    SelectedBg = { r = 170, g = 60, b = 255 },
+    HeaderPink = { r = 148, g = 0, b = 211 },
+    SelectedBg = { r = 148, g = 0, b = 211 },
     TextWhite = { r = 255, g = 255, b = 255 },
-    TextMuted = { r = 150, g = 150, b = 150 },
-    BackgroundDark = { r = 10, g = 10, b = 14 },
-    FooterBlack = { r = 8, g = 8, b = 12 },
-    Border = { r = 40, g = 40, b = 50 },
-    TabInactive = { r = 20, g = 20, b = 30 },
-    ItemBackground = { r = 18, g = 18, b = 26 },
-    ItemSelectedOverlay = { r = 60, g = 20, b = 80 },
-    CardBackground = { r = 22, g = 22, b = 32 },
-    HeaderGlow = { r = 200, g = 100, b = 255 }
+    BackgroundDark = { r = 0, g = 0, b = 0 },
+    FooterBlack = { r = 0, g = 0, b = 0 }
 }
 
 Menu.CurrentTheme = "Purple"
 
 function Menu.ApplyTheme(themeName)
     if not themeName or type(themeName) ~= "string" then
-        themeName = "Pheze"
+        themeName = "Purple"
     end
+    
 
-    local t = string.lower(themeName)
+    local themeLower = string.lower(themeName)
     Menu.CurrentTheme = themeName
-
-    if t == "pheze" or t == "purple" then
-        Menu.Colors.HeaderPink = { r = 170, g = 60, b = 255 }
-        Menu.Colors.SelectedBg = { r = 170, g = 60, b = 255 }
-        Menu.Colors.TextWhite = { r = 255, g = 255, b = 255 }
-        Menu.Colors.TextMuted = { r = 150, g = 150, b = 150 }
-        Menu.Colors.BackgroundDark = { r = 10, g = 10, b = 14 }
-        Menu.Colors.FooterBlack = { r = 8, g = 8, b = 12 }
-        Menu.Colors.Border = { r = 40, g = 40, b = 50 }
-        Menu.Colors.TabInactive = { r = 20, g = 20, b = 30 }
-        Menu.Colors.ItemBackground = { r = 18, g = 18, b = 26 }
-        Menu.Colors.ItemSelectedOverlay = { r = 60, g = 20, b = 80 }
-        Menu.Colors.CardBackground = { r = 22, g = 22, b = 32 }
-        Menu.Colors.HeaderGlow = { r = 200, g = 100, b = 255 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
-        Menu.CurrentTheme = "Pheze"
-    elseif t == "red" then
-        Menu.Colors.HeaderPink = { r = 255, g = 50, b = 80 }
-        Menu.Colors.SelectedBg = { r = 255, g = 50, b = 80 }
+    
+    if themeLower == "red" then
+        Menu.Colors.HeaderPink = { r = 255, g = 0, b = 0 }
+        Menu.Colors.SelectedBg = { r = 255, g = 0, b = 0 }
         Menu.Banner.imageUrl = "https://i.imgur.com/cOFPinI.gif"
         Menu.CurrentTheme = "Red"
-    elseif t == "gray" then
+    elseif themeLower == "purple" then
+        Menu.Colors.HeaderPink = { r = 148, g = 0, b = 211 }
+        Menu.Colors.SelectedBg = { r = 148, g = 0, b = 211 }
+        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
+        Menu.CurrentTheme = "Purple"
+    elseif themeLower == "gray" then
         Menu.Colors.HeaderPink = { r = 128, g = 128, b = 128 }
         Menu.Colors.SelectedBg = { r = 128, g = 128, b = 128 }
         Menu.Banner.imageUrl = "https://i.imgur.com/iZnBhaR.jpeg"
         Menu.CurrentTheme = "Gray"
-    elseif t == "pink" then
+    elseif themeLower == "pink" then
         Menu.Colors.HeaderPink = { r = 255, g = 20, b = 147 }
         Menu.Colors.SelectedBg = { r = 255, g = 20, b = 147 }
         Menu.Banner.imageUrl = "https://i.imgur.com/BbABj2n.png"
-        Menu.CurrentTheme = "Pink"
+        Menu.CurrentTheme = "pink"
     else
-        Menu.Colors.HeaderPink = { r = 170, g = 60, b = 255 }
-        Menu.Colors.SelectedBg = { r = 170, g = 60, b = 255 }
+        Menu.Colors.HeaderPink = { r = 148, g = 0, b = 211 }
+        Menu.Colors.SelectedBg = { r = 148, g = 0, b = 211 }
         Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
-        Menu.CurrentTheme = "Pheze"
+        Menu.CurrentTheme = "Purple"
     end
 
     if Menu.Banner.enabled and Menu.Banner.imageUrl then
@@ -189,15 +173,15 @@ function Menu.ApplyTheme(themeName)
 end
 
 Menu.Position = {
-    x = 60,
-    y = 80,
-    width = 340,
-    itemHeight = 30,
-    mainMenuHeight = 24,
-    headerHeight = 90,
-    footerHeight = 25,
-    footerSpacing = 4,
-    mainMenuSpacing = 4,
+    x = 50,
+    y = 100,
+    width = 360,
+    itemHeight = 34,
+    mainMenuHeight = 26,
+    headerHeight = 100,
+    footerHeight = 26,
+    footerSpacing = 5,
+    mainMenuSpacing = 5,
     footerRadius = 4,
     itemRadius = 4,
     scrollbarWidth = 12,
@@ -265,24 +249,33 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
 end
 
 function Menu.DrawHeader()
-    local p = Menu.GetScaledPosition()
-    local x = p.x
-    local y = p.y
-    local w = p.width - 1
-    local h = p.headerHeight
+    local scaledPos = Menu.GetScaledPosition()
+    local scale = Menu.Scale or 1.0
+    local x = scaledPos.x
+    local y = scaledPos.y
+    local width = scaledPos.width - 1
+    local height = scaledPos.headerHeight
+    local radius = scaledPos.headerRadius
+    local bannerHeight = Menu.Banner.height * scale
 
-    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
-        Susano.DrawImage(Menu.bannerTexture, x, y, w, Menu.Banner.height * (Menu.Scale or 1.0), 1, 1, 1, 1, 0)
-        return
+    if Menu.Banner.enabled then
+        if Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
+            
+            Susano.DrawImage(Menu.bannerTexture, x, y, width, bannerHeight, 1, 1, 1, 1, 0)
+        else
+            Menu.DrawRect(x, y, width, height, Menu.Colors.HeaderPink.r, Menu.Colors.HeaderPink.g, Menu.Colors.HeaderPink.b, 255)
+
+            local logoX = x + width / 2 - 12
+            local logoY = y + height / 2 - 20
+            Menu.DrawText(logoX, logoY, "P", 44, 1.0, 1.0, 1.0, 1.0)
+        end
+    else
+        Menu.DrawRect(x, y, width, height, Menu.Colors.HeaderPink.r, Menu.Colors.HeaderPink.g, Menu.Colors.HeaderPink.b, 255)
+
+        local logoX = x + width / 2 - 12
+        local logoY = y + height / 2 - 20
+        Menu.DrawText(logoX, logoY, "P", 44, 1.0, 1.0, 1.0, 1.0)
     end
-
-    Menu.DrawRect(x, y, w, h, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, 255)
-    Menu.DrawRect(x + 10, y + 10, w - 20, h - 20, Menu.Colors.CardBackground.r, Menu.Colors.CardBackground.g, Menu.Colors.CardBackground.b, 200)
-    Menu.DrawRect(x, y + h - 2, w, 2, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
-    Menu.DrawRect(x + 16, y + 14, 3, h - 28, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
-
-    Menu.DrawText(x + 30, y + 18, "PHEZE", 22, 1.0, 1.0, 1.0, 1.0)
-    Menu.DrawText(x + 30, y + 46, "premium interface", 11, Menu.Colors.TextMuted.r / 255.0, Menu.Colors.TextMuted.g / 255.0, Menu.Colors.TextMuted.b / 255.0, 0.95)
 end
 
 function Menu.DrawScrollbar(x, startY, visibleHeight, selectedIndex, totalItems, isMainMenu, menuWidth)
@@ -654,8 +647,6 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
                 end
             end
         end
-
-        Menu.DrawRect(x + (10 * scale), itemY + (6 * scale), width - (20 * scale), itemHeight - (12 * scale), Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 90)
 
         Menu.DrawRect(selectorX, drawY, 3, itemHeight, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
     end
@@ -1187,7 +1178,7 @@ function Menu.DrawCategories()
             end
             
             local text = tab.name
-            local textSize = 15
+            local textSize = 16
             local textWidth = 0
             if Susano and Susano.GetTextWidth then
                 textWidth = Susano.GetTextWidth(text, textSize)
@@ -1490,7 +1481,7 @@ function Menu.DrawFooter()
     local x = scaledPos.x
     local footerY
     local totalHeight
-
+    
     local bannerHeight = Menu.Banner.enabled and (Menu.Banner.height * scale) or scaledPos.headerHeight
 
     if Menu.OpenedCategory then
@@ -1521,25 +1512,29 @@ function Menu.DrawFooter()
     local footerRounding = scaledPos.footerRadius
 
     if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(
-            x, footerY, footerWidth, footerHeight,
-            Menu.Colors.FooterBlack.r / 255.0,
-            Menu.Colors.FooterBlack.g / 255.0,
-            Menu.Colors.FooterBlack.b / 255.0,
-            1.0,
-            footerRounding
-        )
+        Susano.DrawRectFilled(x, footerY, footerWidth, footerHeight,
+            0.0, 0.0, 0.0, 1.0,
+            footerRounding)
     else
-        Menu.DrawRoundedRect(x, footerY, footerWidth, footerHeight, Menu.Colors.FooterBlack.r, Menu.Colors.FooterBlack.g, Menu.Colors.FooterBlack.b, 255, footerRounding)
+        Menu.DrawRoundedRect(x, footerY, footerWidth, footerHeight, 0, 0, 0, 255, footerRounding)
     end
 
-    local footerPadding = 12 * scale
-    local footerSize = 12
+    local footerPadding = 15 * scale
+    local footerSize = 13
     local scaledFooterSize = footerSize * scale
     local footerTextY = footerY + (footerHeight / 2) - (scaledFooterSize / 2) + (1 * scale)
 
-    local footerText = "pheze premium ui"
-    Menu.DrawText(x + footerPadding, footerTextY, footerText, footerSize, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 0.7)
+    local footerText = " https://discord.gg/zP8MaFP9uM "
+    local currentX = x + footerPadding
+
+    local textWidth = 0
+    if Susano and Susano.GetTextWidth then
+        textWidth = Susano.GetTextWidth(footerText, scaledFooterSize)
+    else
+        textWidth = string.len(footerText) * 8 * scale
+    end
+
+    Menu.DrawText(currentX, footerTextY, footerText, footerSize, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 1.0)
 
     local displayIndex
     local totalItems
@@ -1566,6 +1561,7 @@ function Menu.DrawFooter()
     end
 
     local posText = string.format("%d/%d", displayIndex, totalItems)
+
     local posWidth = 0
     if Susano and Susano.GetTextWidth then
         posWidth = Susano.GetTextWidth(posText, scaledFooterSize)
