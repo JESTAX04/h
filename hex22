@@ -4588,6 +4588,65 @@ function Menu.TrollPlayer(playerData)
     AttachEntityToEntity(obj, ped, GetPedBoneIndex(ped, 0), 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, true, true, false, true, 1, true)
 end
 
+
+-- =========================
+-- GUN NPC ATTACK FUNCTION
+-- =========================
+function Menu.GunNPCAttackPlayer(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then
+        print("Gun NPC attack failed: player not found")
+        return
+    end
+
+    if not GetPlayerPed or not GetEntityCoords or not RequestModel or not HasModelLoaded or not CreatePed or not GiveWeaponToPed or not TaskCombatPed then
+        print("Gun NPC attack failed: natives missing")
+        return
+    end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    local coords = GetEntityCoords(ped)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    local model = `g_m_y_lost_01`
+    local weapon = `WEAPON_PISTOL`
+
+    RequestModel(model)
+    while not HasModelLoaded(model) do
+        Wait(10)
+    end
+
+    for i = 1, 3 do
+        local spawnX = x + math.random(-4, 4)
+        local spawnY = y + math.random(-4, 4)
+        local npc = CreatePed(4, model, spawnX, spawnY, z, 0.0, true, true)
+
+        if npc and npc ~= 0 then
+            GiveWeaponToPed(npc, weapon, 250, false, true)
+
+            if SetPedCombatAttributes then
+                SetPedCombatAttributes(npc, 46, true)
+                SetPedCombatAttributes(npc, 5, true)
+            end
+            if SetPedCombatAbility then SetPedCombatAbility(npc, 2) end
+            if SetPedCombatRange then SetPedCombatRange(npc, 2) end
+            if SetPedCombatMovement then SetPedCombatMovement(npc, 2) end
+            if SetPedAccuracy then SetPedAccuracy(npc, 70) end
+            if SetPedDropsWeaponsWhenDead then SetPedDropsWeaponsWhenDead(npc, false) end
+            if SetPedAsEnemy then SetPedAsEnemy(npc, true) end
+
+            TaskCombatPed(npc, ped, 0, 16)
+        end
+    end
+end
+
 function Menu.OpenPlayerInfo(playerData)
     if not playerData then return end
     Menu.PlayerList = Menu.PlayerList or {}
@@ -4674,6 +4733,13 @@ function Menu.RefreshOnlinePlayers()
                 type = "action",
                 onClick = function()
                     Menu.TrollPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Gun NPC Attack",
+                type = "action",
+                onClick = function()
+                    Menu.GunNPCAttackPlayer(selectedPlayer)
                 end
             }
         }
