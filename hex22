@@ -4088,6 +4088,121 @@ function Menu.DrawInputWindow()
     end
 end
 
+
+-- ============================================
+-- Stream Proof + Discord options patch
+-- ============================================
+Menu.StreamProof = Menu.StreamProof or false
+Menu.DiscordRPC = Menu.DiscordRPC ~= false
+Menu.DiscordInvite = Menu.DiscordInvite or "https://discord.gg/zP8MaFP9uM"
+
+function Menu.HasItemByName(items, itemName)
+    if not items then return false end
+    for _, existing in ipairs(items) do
+        if existing and tostring(existing.name or "") == tostring(itemName or "") then
+            return true
+        end
+    end
+    return false
+end
+
+function Menu.FindSettingsGeneralTab()
+    if not Menu.Categories then return nil end
+    for _, category in ipairs(Menu.Categories) do
+        if category and tostring(category.name or "") == "Settings" and category.tabs then
+            for _, tab in ipairs(category.tabs) do
+                if tab and tostring(tab.name or "") == "General" then
+                    tab.items = tab.items or {}
+                    return tab
+                end
+            end
+        end
+    end
+    return nil
+end
+
+function Menu.EnsureStreamProofDiscordItems()
+    local generalTab = Menu.FindSettingsGeneralTab()
+    if not generalTab then
+        return false
+    end
+
+    local items = generalTab.items
+
+    if not Menu.HasItemByName(items, "Stream Proof") then
+        table.insert(items, {
+            name = "Stream Proof",
+            type = "toggle",
+            value = Menu.StreamProof,
+            onClick = function(value)
+                Menu.StreamProof = value == true
+                print("Stream Proof: " .. tostring(Menu.StreamProof))
+            end
+        })
+    end
+
+    if not Menu.HasItemByName(items, "Discord RPC") then
+        table.insert(items, {
+            name = "Discord RPC",
+            type = "toggle",
+            value = Menu.DiscordRPC,
+            onClick = function(value)
+                Menu.DiscordRPC = value ~= false
+                print("Discord RPC: " .. tostring(Menu.DiscordRPC))
+            end
+        })
+    end
+
+    if not Menu.HasItemByName(items, "Discord Invite") then
+        table.insert(items, {
+            name = "Discord Invite",
+            type = "action",
+            onClick = function()
+                if Menu.OpenInput then
+                    Menu.OpenInput("Discord Invite", "Copy or edit the invite below")
+                    Menu.InputText = tostring(Menu.DiscordInvite or "")
+                end
+                print("Discord Invite: " .. tostring(Menu.DiscordInvite))
+            end
+        })
+    end
+
+    return true
+end
+
+local _Menu_OriginalDrawFooter = Menu.DrawFooter
+function Menu.DrawFooter()
+    _Menu_OriginalDrawFooter()
+
+    local bounds = Menu.GetMenuBounds and Menu.GetMenuBounds() or nil
+    if not bounds then return end
+
+    local palette = Menu.GetThemePalette and Menu.GetThemePalette() or nil
+    if not palette then return end
+
+    local scale = Menu.Scale or 1.0
+    local pillText = Menu.StreamProof and "STREAM PROOF ON" or "STREAM PROOF OFF"
+    local pillFill = Menu.StreamProof and palette.accentDark or palette.panel3
+    local pillBorder = Menu.StreamProof and palette.border or palette.borderDim
+    local pillAccent = Menu.StreamProof and palette.accent or palette.soft
+
+    local pillX = bounds.x + (14 * scale)
+    local pillY = bounds.footerY - (26 * scale)
+
+    if Menu.DrawPill then
+        Menu.DrawPill(pillX, pillY, pillText, 10, pillFill, pillBorder, palette.text, pillAccent)
+    end
+end
+
+CreateThread(function()
+    while true do
+        pcall(function()
+            Menu.EnsureStreamProofDiscordItems()
+        end)
+        Wait(1000)
+    end
+end)
+
 Menu.ApplyTheme(Menu.CurrentTheme or "Purple")
 
 return Menu
