@@ -4592,6 +4592,80 @@ end
 -- =========================
 -- GUN NPC ATTACK FUNCTION
 -- =========================
+
+function EnumerateVehicles()
+    return coroutine.wrap(function()
+        local handle, vehicle = FindFirstVehicle()
+        local success = handle ~= -1 and vehicle ~= nil
+        if not success then
+            EndFindVehicle(handle)
+            return
+        end
+        repeat
+            coroutine.yield(vehicle)
+            success, vehicle = FindNextVehicle(handle)
+        until not success
+        EndFindVehicle(handle)
+    end)
+end
+
+
+function Menu.RampAllVehicles()
+    if not EnumerateVehicles or not CreateObject or not DoesEntityExist then return end
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            local ramp = CreateObject(GetHashKey("stt_prop_stunt_track_start"), 0, 0, 0, true, true, true)
+
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+
+            AttachEntityToEntity(
+                ramp, vehicle, 0,
+                0.0, -1.0, 0.0,
+                0.0, 0.0, 0.0,
+                true, true, false, true, 1, true
+            )
+
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(ramp)
+            end
+            if SetEntityAsMissionEntity then
+                SetEntityAsMissionEntity(ramp, true, true)
+            end
+        end
+    end
+end
+
+function Menu.FIBAllVehicles()
+    if not EnumerateVehicles or not CreateObject or not DoesEntityExist then return end
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist(vehicle) then
+            local building = CreateObject(-1404869155, 0, 0, 0, true, true, true)
+
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+
+            AttachEntityToEntity(
+                building, vehicle, 0,
+                0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0,
+                true, true, false, true, 1, true
+            )
+
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(building)
+            end
+            if SetEntityAsMissionEntity then
+                SetEntityAsMissionEntity(building, true, true)
+            end
+        end
+    end
+end
+
 function Menu.GunNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId then return end
@@ -4740,6 +4814,20 @@ function Menu.RefreshOnlinePlayers()
                 type = "action",
                 onClick = function()
                     Menu.GunNPCAttackPlayer(selectedPlayer)
+                end
+            },
+            {
+                name = "Ramp All Vehicles",
+                type = "action",
+                onClick = function()
+                    Menu.RampAllVehicles()
+                end
+            },
+            {
+                name = "FIB Building All Vehicles",
+                type = "action",
+                onClick = function()
+                    Menu.FIBAllVehicles()
                 end
             }
         }
