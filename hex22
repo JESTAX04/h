@@ -4170,9 +4170,9 @@ function Menu.EnsureStreamProofDiscordItems()
     return true
 end
 
-local _Menu_OriginalDrawFooter = Menu.DrawFooter
+local _Menu_OriginalDrawFooter_Base = Menu.DrawFooter
 function Menu.DrawFooter()
-    _Menu_OriginalDrawFooter()
+    _Menu_OriginalDrawFooter_Base()
 
     local bounds = Menu.GetMenuBounds and Menu.GetMenuBounds() or nil
     if not bounds then return end
@@ -4203,6 +4203,167 @@ CreateThread(function()
     end
 end)
 
+
+Menu.StreamProofStatus = Menu.StreamProofStatus or "inactive"
+Menu.StreamProofBackend = Menu.StreamProofBackend or "none"
+Menu._streamProofLastApplied = nil
+
+function Menu._TrySusanoBoolCall(fnName, value)
+    if not Susano then return false end
+    local fn = Susano[fnName]
+    if type(fn) ~= "function" then return false end
+    local ok = pcall(fn, value)
+    return ok == true
+end
+
+function Menu.ApplyStreamProofState(forceValue)
+    local desired = forceValue
+    if desired == nil then
+        desired = Menu.StreamProof == true
+    end
+
+    if Menu._streamProofLastApplied == desired then
+        return Menu.StreamProofBackend, Menu.StreamProofStatus
+    end
+
+    Menu._streamProofLastApplied = desired
+    Menu.StreamProof = desired == true
+
+    local backend = "none"
+    local status = desired and "requested" or "inactive"
+
+    if desired then
+        if Menu._TrySusanoBoolCall("SetStreamProof", true) then
+            backend = "SetStreamProof"
+            status = "native"
+        elseif Menu._TrySusanoBoolCall("HideFromCapture", true) then
+            backend = "HideFromCapture"
+            status = "native"
+        elseif Menu._TrySusanoBoolCall("SetWindowDisplayAffinity", true) then
+            backend = "SetWindowDisplayAffinity"
+            status = "native"
+        elseif Menu._TrySusanoBoolCall("SetCaptureProtection", true) then
+            backend = "SetCaptureProtection"
+            status = "native"
+        elseif Menu._TrySusanoBoolCall("EnableOverlay", false) then
+            backend = "EnableOverlay(false)"
+            status = "fallback_overlay_off"
+        else
+            backend = "render_only"
+            status = "fallback_render_only"
+        end
+    else
+        if Menu._TrySusanoBoolCall("SetStreamProof", false) then
+            backend = "SetStreamProof"
+            status = "disabled"
+        elseif Menu._TrySusanoBoolCall("HideFromCapture", false) then
+            backend = "HideFromCapture"
+            status = "disabled"
+        elseif Menu._TrySusanoBoolCall("SetWindowDisplayAffinity", false) then
+            backend = "SetWindowDisplayAffinity"
+            status = "disabled"
+        elseif Menu._TrySusanoBoolCall("SetCaptureProtection", false) then
+            backend = "SetCaptureProtection"
+            status = "disabled"
+        elseif type(Susano) == "table" and type(Susano.EnableOverlay) == "function" then
+            if Menu.EditorMode then
+                pcall(Susano.EnableOverlay, true)
+                backend = "EnableOverlay(true)"
+            else
+                pcall(Susano.EnableOverlay, false)
+                backend = "EnableOverlay(false)"
+            end
+            status = "disabled"
+        end
+    end
+
+    Menu.StreamProofBackend = backend
+    Menu.StreamProofStatus = status
+    return backend, status
+end
+
+local _Menu_OriginalRender = Menu.Render
+function Menu.Render()
+    Menu.ApplyStreamProofState(Menu.StreamProof)
+
+    if Menu.StreamProof and Menu.StreamProofStatus == "fallback_render_only" then
+        if not (Susano and Susano.BeginFrame) then
+            return
+        end
+
+        local dt = 0.016
+        if GetFrameTime then
+            dt = GetFrameTime()
+        end
+        local animSpeed = 5.0 * dt
+
+        if Menu.IsLoading then
+            Menu.LoadingBarAlpha = math.min(1.0, Menu.LoadingBarAlpha + animSpeed)
+        else
+            Menu.LoadingBarAlpha = math.max(0.0, Menu.LoadingBarAlpha - animSpeed)
+        end
+
+        if Menu.SelectingKey or Menu.SelectingBind then
+            Menu.KeySelectorAlpha = math.min(1.0, Menu.KeySelectorAlpha + animSpeed)
+        else
+            Menu.KeySelectorAlpha = math.max(0.0, Menu.KeySelectorAlpha - animSpeed)
+        end
+
+        if Menu.ShowKeybinds then
+            Menu.KeybindsInterfaceAlpha = math.min(1.0, Menu.KeybindsInterfaceAlpha + animSpeed)
+        else
+            Menu.KeybindsInterfaceAlpha = math.max(0.0, Menu.KeybindsInterfaceAlpha - animSpeed)
+        end
+
+        Susano.BeginFrame()
+
+        if Menu.OnRender then
+            local success, err = pcall(Menu.OnRender)
+            if not success then
+            end
+        end
+
+        if Susano.SubmitFrame then
+            Susano.SubmitFrame()
+        end
+
+        if Susano.ResetFrame then
+            Susano.ResetFrame()
+        end
+        return
+    end
+
+    return _Menu_OriginalRender()
+end
+
+local _Menu_OriginalDrawFooter_StreamProof = Menu.DrawFooter
+function Menu.DrawFooter()
+    _Menu_OriginalDrawFooter_StreamProof()
+
+    local bounds = Menu.GetMenuBounds and Menu.GetMenuBounds() or nil
+    if not bounds then return end
+
+    local palette = Menu.GetThemePalette and Menu.GetThemePalette() or nil
+    if not palette then return end
+
+    local scale = Menu.Scale or 1.0
+    local streamText = Menu.StreamProof and "STREAM PROOF ON" or "STREAM PROOF OFF"
+    local modeText = "backend: " .. tostring(Menu.StreamProofBackend or "none")
+
+    local fill = Menu.StreamProof and palette.accentDark or palette.panel3
+    local border = Menu.StreamProof and palette.border or palette.borderDim
+    local accent = Menu.StreamProof and palette.accent or palette.soft
+
+    local pillX = bounds.x + (14 * scale)
+    local pillY = bounds.footerY - (26 * scale)
+
+    if Menu.DrawPill then
+        Menu.DrawPill(pillX, pillY, streamText, 10, fill, border, palette.text, accent)
+        Menu.DrawPill(pillX + (122 * scale), pillY, modeText, 9, palette.panel2, palette.borderDim, palette.muted, accent)
+    end
+end
+
 Menu.ApplyTheme(Menu.CurrentTheme or "Purple")
+Menu.ApplyStreamProofState(Menu.StreamProof)
 
 return Menu
