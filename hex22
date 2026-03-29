@@ -2175,7 +2175,327 @@ Menu.KeyNames = {
 }
 
 function Menu.GetKeyName(keyCode)
-    return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
+    
+
+
+Menu.HexAllIncludeSelf = Menu.HexAllIncludeSelf or false
+
+function Menu.HEXPlayer(playerData)
+    if not playerData then return end
+
+    local target = nil
+    if type(playerData) == "table" then
+        if playerData.clientId ~= nil then
+            target = playerData.clientId
+        elseif playerData.id ~= nil and GetPlayerFromServerId then
+            target = GetPlayerFromServerId(playerData.id)
+        end
+    else
+        target = playerData
+    end
+
+    if target == nil or target == -1 then
+        print("HEX failed: player not found")
+        return
+    end
+
+    if not GetPlayerPed or not GetOffsetFromEntityInWorldCoords or not RequestModel or not HasModelLoaded or not CreatePed then
+        print("HEX failed: natives missing")
+        return
+    end
+
+    local rmodel = "a_m_o_acult_01"
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    local coords = GetOffsetFromEntityInWorldCoords(ped, 0.0, 8.0, 0.5)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    local modelHash = GetHashKey and GetHashKey(rmodel) or rmodel
+    RequestModel(modelHash)
+
+    if RequestAnimDict then
+        RequestAnimDict("rcmpaparazzo_2")
+    end
+
+    while not HasModelLoaded(modelHash) do
+        Wait(0)
+    end
+
+    if HasAnimDictLoaded and RequestAnimDict then
+        while not HasAnimDictLoaded("rcmpaparazzo_2") do
+            Wait(0)
+        end
+    end
+
+    local nped = CreatePed(31, modelHash, x, y, z, 0.0, true, true)
+    if not nped or nped == 0 then return end
+
+    if SetPedComponentVariation then
+        SetPedComponentVariation(nped, 4, 0, 0, 0)
+    end
+    if SetPedKeepTask then
+        SetPedKeepTask(nped, true)
+    end
+    if TaskPlayAnim then
+        TaskPlayAnim(nped, "rcmpaparazzo_2", "shag_loop_a", 2.0, 2.5, -1, 49, 0, false, false, false)
+    end
+    if AttachEntityToEntity then
+        AttachEntityToEntity(nped, ped, 0, 0.0, -0.3, 0.0, 0.0, 0.0, 0.0, true, true, true, true, 0, true)
+    end
+end
+
+
+function Menu.LaunchPlayer(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then
+        print("Launch failed: player not found")
+        return
+    end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        NetworkRequestControlOfEntity(ped)
+    end
+
+    if ApplyForceToEntity then
+        ApplyForceToEntity(
+            ped,
+            1,
+            math.random(-20, 20),
+            math.random(-20, 20),
+            120.0,
+            0.0, 0.0, 0.0,
+            0,
+            true, true, true, false, true
+        )
+    end
+end
+
+function Menu.HEXAllPlayers()
+    if not GetActivePlayers then return end
+    local playerList = GetActivePlayers()
+    for i = 1, #playerList do
+        local curPlayer = playerList[i]
+        local shouldApply = true
+        if Menu.HexAllIncludeSelf and PlayerId then
+            shouldApply = curPlayer ~= PlayerId()
+        end
+        if shouldApply then
+            local pdata = {
+                clientId = curPlayer,
+                id = GetPlayerServerId and GetPlayerServerId(curPlayer) or curPlayer
+            }
+            Menu.HEXPlayer(pdata)
+        end
+    end
+end
+
+
+Menu.IsPiggybacking = Menu.IsPiggybacking or false
+Menu.PiggybackTarget = Menu.PiggybackTarget or nil
+
+function Menu.TogglePiggybackOnPlayer(playerData)
+    if not playerData then return end
+    if not PlayerPedId or not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local myPed = PlayerPedId()
+    if Menu.IsPiggybacking then
+        if ClearPedSecondaryTask then
+            ClearPedSecondaryTask(myPed)
+        end
+        if DetachEntity then
+            DetachEntity(myPed, true, false)
+        end
+        Menu.IsPiggybacking = false
+        Menu.PiggybackTarget = nil
+        return
+    end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then
+        print("Piggyback failed: player not found")
+        return
+    end
+
+    local targetPed = GetPlayerPed(target)
+    if not targetPed or targetPed == 0 then
+        print("Piggyback failed: target ped not found")
+        return
+    end
+
+    local animDict = "anim@arena@celeb@flat@paired@no_props@"
+    local animName = "piggyback_c_player_b"
+
+    if RequestAnimDict and HasAnimDictLoaded then
+        if not HasAnimDictLoaded(animDict) then
+            RequestAnimDict(animDict)
+            while not HasAnimDictLoaded(animDict) do
+                Wait(0)
+            end
+        end
+    end
+
+    if AttachEntityToEntity then
+        AttachEntityToEntity(myPed, targetPed, 0, 0.0, -0.25, 0.45, 0.5, 0.5, 180.0, false, false, false, false, 2, false)
+    end
+
+    if TaskPlayAnim then
+        TaskPlayAnim(myPed, animDict, animName, 8.0, -8.0, 1000000, 33, 0, false, false, false)
+    end
+
+    Menu.IsPiggybacking = true
+    Menu.PiggybackTarget = playerData
+end
+
+Menu.ParticleLoops = Menu.ParticleLoops or {
+    Molotov = { enabled = false, player = nil, asset = "core", effect = "exp_air_molotov", scale = 10.0 },
+    Firework = { enabled = false, player = nil, asset = "scr_indep_fireworks", effect = "scr_indep_firework_trailburst", scale = 1.0 },
+    Firework2 = { enabled = false, player = nil, asset = "proj_indep_firework_v2", effect = "scr_firework_indep_ring_burst_rwb", scale = 10.0 },
+    Smoke = { enabled = false, player = nil, asset = "scr_agencyheist", effect = "scr_fbi_dd_breach_smoke", scale = 10.0 },
+    JesusLight = { enabled = false, player = nil, asset = "scr_rcbarry1", effect = "scr_alien_teleport", scale = 10.0 },
+    AlienLight = { enabled = false, player = nil, asset = "scr_rcbarry2", effect = "scr_clown_appears", scale = 10.0 },
+    HugeExplosion = { enabled = false, player = nil, asset = "scr_exile1", effect = "scr_ex1_plane_exp_sp", scale = 10.0 }
+}
+
+function Menu.ToggleParticleLoop(loopName, playerData)
+    if not Menu.ParticleLoops or not Menu.ParticleLoops[loopName] then return end
+    local loop = Menu.ParticleLoops[loopName]
+    loop.enabled = not loop.enabled
+    if loop.enabled then
+        loop.player = playerData
+    else
+        loop.player = nil
+    end
+end
+
+function Menu.PlayParticleOnPlayer(loopName, playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed or not GetEntityCoords then return end
+    if not RequestNamedPtfxAsset or not UseParticleFxAssetNextCall or not StartNetworkedParticleFxNonLoopedAtCoord then return end
+    local cfg = Menu.ParticleLoops and Menu.ParticleLoops[loopName]
+    if not cfg then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    RequestNamedPtfxAsset(cfg.asset)
+    UseParticleFxAssetNextCall(cfg.asset)
+    StartNetworkedParticleFxNonLoopedAtCoord(cfg.effect, x, y, z, 0.0, 0.0, 0.0, cfg.scale or 1.0, false, false, false, false)
+end
+
+function Menu.BuildParticleLoopItems(selectedPlayer)
+    local p = Menu.ParticleLoops or {}
+    return {
+        {
+            name = "Back To Player Actions",
+            type = "action",
+            onClick = function()
+                Menu.PlayerList.submenu = nil
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        { isSeparator = true, separatorText = "PARTICLE EFFECTS" },
+        {
+            name = "Molotov Particles Loop",
+            type = "toggle",
+            value = p.Molotov and p.Molotov.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("Molotov", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            name = "Firework Particles Loop",
+            type = "toggle",
+            value = p.Firework and p.Firework.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("Firework", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            name = "Firework 2 Particles Loop",
+            type = "toggle",
+            value = p.Firework2 and p.Firework2.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("Firework2", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            name = "Smoke Particles Loop",
+            type = "toggle",
+            value = p.Smoke and p.Smoke.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("Smoke", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            name = "Jesus Light Particles Loop",
+            type = "toggle",
+            value = p.JesusLight and p.JesusLight.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("JesusLight", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            name = "Alien Light Particles Loop",
+            type = "toggle",
+            value = p.AlienLight and p.AlienLight.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("AlienLight", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        },
+        {
+            name = "Huge Explosion Loop",
+            type = "toggle",
+            value = p.HugeExplosion and p.HugeExplosion.enabled or false,
+            onClick = function()
+                Menu.ToggleParticleLoop("HugeExplosion", selectedPlayer)
+                Menu.RefreshOnlinePlayers()
+            end
+        }
+    }
+end
+
+function Menu.RunParticleLoops()
+    if not Menu.ParticleLoops then return end
+    for loopName, cfg in pairs(Menu.ParticleLoops) do
+        if cfg and cfg.enabled and cfg.player then
+            pcall(function()
+                Menu.PlayParticleOnPlayer(loopName, cfg.player)
+            end)
+        end
+    end
+end
+
+local _Menu_OriginalRender_ParticleLoops = Menu.Render
+function Menu.Render()
+    pcall(function()
+        Menu.RunParticleLoops()
+    end)
+    return _Menu_OriginalRender_ParticleLoops()
+end
+
+
+return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
 
 function Menu.GetMousePosition()
@@ -4725,6 +5045,7 @@ function Menu.OpenPlayerInfo(playerData)
     if not playerData then return end
     Menu.PlayerList = Menu.PlayerList or {}
     Menu.PlayerList.selectedPlayer = playerData
+    Menu.PlayerList.submenu = nil
     Menu.PlayerInfoPopup.open = false
     Menu.PlayerInfoPopup.player = nil
     Menu.RefreshOnlinePlayers()
@@ -4733,6 +5054,7 @@ end
 function Menu.ClosePlayerInfo()
     Menu.PlayerList = Menu.PlayerList or {}
     Menu.PlayerList.selectedPlayer = nil
+    Menu.PlayerList.submenu = nil
     Menu.PlayerInfoPopup.open = false
     Menu.PlayerInfoPopup.player = nil
     Menu.RefreshOnlinePlayers()
@@ -4748,89 +5070,148 @@ function Menu.RefreshOnlinePlayers()
 
     local selectedPlayer = Menu.PlayerList.selectedPlayer
     if selectedPlayer then
-        for _, onlinePlayer in ipairs(Menu.PlayerList.players or {}) do
-            if tostring(onlinePlayer.id) == tostring(selectedPlayer.id) then
-                selectedPlayer = onlinePlayer
-                break
+        if Menu.PlayerList.submenu == "particleeffects" then
+            items = Menu.BuildParticleLoopItems(selectedPlayer)
+        else
+            local coordText = "Coords: N/A"
+            local ped = Menu.GetPlayerPedSafe and Menu.GetPlayerPedSafe(selectedPlayer.clientId) or nil
+            if ped and GetEntityCoords then
+                local coords = GetEntityCoords(ped)
+                if coords then
+                    local cx = coords.x or coords[1] or 0.0
+                    local cy = coords.y or coords[2] or 0.0
+                    local cz = coords.z or coords[3] or 0.0
+                    coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
+                end
             end
-        end
-        Menu.PlayerList.selectedPlayer = selectedPlayer
-    end
 
-    local items = {}
-
-    if selectedPlayer then
-        local coordText = "Coords: N/A"
-        local ped = Menu.GetPlayerPedSafe and Menu.GetPlayerPedSafe(selectedPlayer.clientId) or nil
-        if ped and GetEntityCoords then
-            local coords = GetEntityCoords(ped)
-            if coords then
-                local cx = coords.x or coords[1] or 0.0
-                local cy = coords.y or coords[2] or 0.0
-                local cz = coords.z or coords[3] or 0.0
-                coordText = string.format("Coords: %.2f, %.2f, %.2f", cx, cy, cz)
-            end
-        end
-
-        items = {
-            {
-                name = "Back To Player List",
-                type = "action",
-                onClick = function()
-                    Menu.ClosePlayerInfo()
-                end
-            },
-            {
-                name = "Refresh Selected Player",
-                type = "action",
-                onClick = function()
-                    Menu.RefreshOnlinePlayers()
-                end
-            },
-            {
-                isSeparator = true,
-                separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
-            },
-            { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
-            { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
-            { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
-            { name = coordText, type = "action", onClick = function() end },
-            {
-                name = "Teleport To Player",
-                type = "action",
-                onClick = function()
-                    Menu.TeleportToPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Troll Player",
-                type = "action",
-                onClick = function()
-                    Menu.TrollPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Gun NPC Attack",
-                type = "action",
-                onClick = function()
-                    Menu.GunNPCAttackPlayer(selectedPlayer)
-                end
-            },
-            {
-                name = "Ramp All Vehicles",
-                type = "action",
-                onClick = function()
-                    Menu.RampAllVehicles()
-                end
-            },
-            {
-                name = "FIB Building All Vehicles",
-                type = "action",
-                onClick = function()
-                    Menu.FIBAllVehicles()
-                end
+            items = {
+                {
+                    name = "Back To Player List",
+                    type = "action",
+                    onClick = function()
+                        Menu.ClosePlayerInfo()
+                    end
+                },
+                {
+                    name = "Refresh Selected Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
+                    isSeparator = true,
+                    separatorText = "[" .. tostring(selectedPlayer.id or "?") .. "] " .. tostring(selectedPlayer.name or "Unknown")
+                },
+                { name = "Name: " .. tostring(selectedPlayer.name or "Unknown"), type = "action", onClick = function() end },
+                { name = "Server ID: " .. tostring(selectedPlayer.id or "N/A"), type = "action", onClick = function() end },
+                { name = "Client ID: " .. tostring(selectedPlayer.clientId or "N/A"), type = "action", onClick = function() end },
+                { name = coordText, type = "action", onClick = function() end },
+                {
+                    name = "Teleport To Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TeleportToPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Troll Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TrollPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Gun NPC Attack",
+                    type = "action",
+                    onClick = function()
+                        Menu.GunNPCAttackPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Ramp All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.RampAllVehicles()
+                    end
+                },
+                {
+                    name = "FIB Building All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.FIBAllVehicles()
+                    end
+                },
+                {
+                    name = "Magnet Cars",
+                    type = "action",
+                    onClick = function()
+                        Menu.MagnetCars()
+                    end
+                },
+                {
+                    name = "Flip All Vehicles",
+                    type = "action",
+                    onClick = function()
+                        Menu.FlipAllVehicles()
+                    end
+                },
+                {
+                    name = "Spin Cars Tornado",
+                    type = "action",
+                    onClick = function()
+                        Menu.SpinCarsTornado()
+                    end
+                },
+                {
+                    name = "Particle Effects On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.PlayerList.submenu = "particleeffects"
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
+                    name = Menu.IsPiggybacking and "Stop Piggyback" or "Piggyback On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.TogglePiggybackOnPlayer(selectedPlayer)
+                        Menu.RefreshOnlinePlayers()
+                    end
+                },
+                {
+                    name = "HEX Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.HEXPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Launch Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.LaunchPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = Menu.HexAllIncludeSelf and "HEX All Players (Skip Self)" or "HEX All Players",
+                    type = "action",
+                    onClick = function()
+                        Menu.HEXAllPlayers()
+                    end
+                },
+                {
+                    name = "Toggle HEX Include Self",
+                    type = "toggle",
+                    value = Menu.HexAllIncludeSelf,
+                    onClick = function(value)
+                        Menu.HexAllIncludeSelf = value == true
+                        Menu.RefreshOnlinePlayers()
+                    end
+                }
             }
-        }
+        end
     else
         local shownPlayers = Menu.PlayerList.filteredPlayers or {}
 
