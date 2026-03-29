@@ -1,6 +1,6 @@
 local Menu = {}
 Menu.Visible = false
-Menu.CurrentCategory = 1
+Menu.CurrentCategory = 2
 Menu.CurrentPage = 1
 Menu.ItemsPerPage = 9
 Menu.scrollbarY = nil
@@ -19,8 +19,8 @@ Menu.SelectorY = 0
 Menu.CategorySelectorY = 0
 Menu.TabSelectorX = 0
 Menu.TabSelectorWidth = 0
-Menu.SmoothFactor = 0.24
-Menu.GradientType = 2
+Menu.SmoothFactor = 0.2
+Menu.GradientType = 1
 Menu.ScrollbarPosition = 1
 
 Menu.LoadingBarAlpha = 0.0
@@ -57,7 +57,7 @@ function Menu.UpdateCategoriesFromTopTab()
         table.insert(Menu.Categories, cat)
     end
     
-    Menu.CurrentCategory = 1
+    Menu.CurrentCategory = 2
     Menu.CategoryScrollOffset = 0
     Menu.OpenedCategory = nil
     
@@ -70,7 +70,7 @@ function Menu.UpdateCategoriesFromTopTab()
 end
 
 Menu.Banner = {
-    enabled = false,
+    enabled = true,
     imageUrl = "https://i.imgur.com/cOFPinI.gif",
     height = 100
 }
@@ -122,56 +122,65 @@ function Menu.LoadBannerTexture(url)
 end
 
 Menu.Colors = {
-    HeaderPink = { r = 255, g = 64, b = 129 },
-    SelectedBg = { r = 255, g = 64, b = 129 },
-    TextWhite = { r = 250, g = 251, b = 255 },
-    TextMuted = { r = 160, g = 166, b = 180 },
-    BackgroundDark = { r = 8, g = 10, b = 14 },
-    FooterBlack = { r = 6, g = 8, b = 12 },
-    Border = { r = 38, g = 44, b = 56 },
-    TabInactive = { r = 15, g = 18, b = 26 },
-    ItemBackground = { r = 14, g = 17, b = 24 },
-    ItemSelectedOverlay = { r = 75, g = 24, b = 46 },
-    CardBackground = { r = 20, g = 24, b = 34 },
-    HeaderGlow = { r = 255, g = 110, b = 170 }
+    HeaderPink = { r = 170, g = 60, b = 255 },
+    SelectedBg = { r = 170, g = 60, b = 255 },
+    TextWhite = { r = 255, g = 255, b = 255 },
+    TextMuted = { r = 150, g = 150, b = 150 },
+    BackgroundDark = { r = 10, g = 10, b = 14 },
+    FooterBlack = { r = 8, g = 8, b = 12 },
+    Border = { r = 40, g = 40, b = 50 },
+    TabInactive = { r = 20, g = 20, b = 30 },
+    ItemBackground = { r = 18, g = 18, b = 26 },
+    ItemSelectedOverlay = { r = 60, g = 20, b = 80 },
+    CardBackground = { r = 22, g = 22, b = 32 },
+    HeaderGlow = { r = 200, g = 100, b = 255 }
 }
 
-Menu.CurrentTheme = "Red"
+Menu.CurrentTheme = "Purple"
 
 function Menu.ApplyTheme(themeName)
     if not themeName or type(themeName) ~= "string" then
-        themeName = "Red"
+        themeName = "Pheze"
     end
-    
 
-    local themeLower = string.lower(themeName)
+    local t = string.lower(themeName)
     Menu.CurrentTheme = themeName
-    
-    if themeLower == "red" then
-        Menu.Colors.HeaderPink = { r = 255, g = 45, b = 85 }
-        Menu.Colors.SelectedBg = { r = 255, g = 45, b = 85 }
+
+    if t == "pheze" or t == "purple" then
+        Menu.Colors.HeaderPink = { r = 170, g = 60, b = 255 }
+        Menu.Colors.SelectedBg = { r = 170, g = 60, b = 255 }
+        Menu.Colors.TextWhite = { r = 255, g = 255, b = 255 }
+        Menu.Colors.TextMuted = { r = 150, g = 150, b = 150 }
+        Menu.Colors.BackgroundDark = { r = 10, g = 10, b = 14 }
+        Menu.Colors.FooterBlack = { r = 8, g = 8, b = 12 }
+        Menu.Colors.Border = { r = 40, g = 40, b = 50 }
+        Menu.Colors.TabInactive = { r = 20, g = 20, b = 30 }
+        Menu.Colors.ItemBackground = { r = 18, g = 18, b = 26 }
+        Menu.Colors.ItemSelectedOverlay = { r = 60, g = 20, b = 80 }
+        Menu.Colors.CardBackground = { r = 22, g = 22, b = 32 }
+        Menu.Colors.HeaderGlow = { r = 200, g = 100, b = 255 }
+        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
+        Menu.CurrentTheme = "Pheze"
+    elseif t == "red" then
+        Menu.Colors.HeaderPink = { r = 255, g = 50, b = 80 }
+        Menu.Colors.SelectedBg = { r = 255, g = 50, b = 80 }
         Menu.Banner.imageUrl = "https://i.imgur.com/cOFPinI.gif"
         Menu.CurrentTheme = "Red"
-    elseif themeLower == "purple" then
-        Menu.Colors.HeaderPink = { r = 180, g = 70, b = 255 }
-        Menu.Colors.SelectedBg = { r = 180, g = 70, b = 255 }
-        Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
-        Menu.CurrentTheme = "Red"
-    elseif themeLower == "gray" then
-        Menu.Colors.HeaderPink = { r = 120, g = 125, b = 135 }
-        Menu.Colors.SelectedBg = { r = 120, g = 125, b = 135 }
+    elseif t == "gray" then
+        Menu.Colors.HeaderPink = { r = 128, g = 128, b = 128 }
+        Menu.Colors.SelectedBg = { r = 128, g = 128, b = 128 }
         Menu.Banner.imageUrl = "https://i.imgur.com/iZnBhaR.jpeg"
         Menu.CurrentTheme = "Gray"
-    elseif themeLower == "pink" then
-        Menu.Colors.HeaderPink = { r = 255, g = 70, b = 145 }
-        Menu.Colors.SelectedBg = { r = 255, g = 70, b = 145 }
+    elseif t == "pink" then
+        Menu.Colors.HeaderPink = { r = 255, g = 20, b = 147 }
+        Menu.Colors.SelectedBg = { r = 255, g = 20, b = 147 }
         Menu.Banner.imageUrl = "https://i.imgur.com/BbABj2n.png"
-        Menu.CurrentTheme = "pink"
+        Menu.CurrentTheme = "Pink"
     else
-        Menu.Colors.HeaderPink = { r = 180, g = 70, b = 255 }
-        Menu.Colors.SelectedBg = { r = 180, g = 70, b = 255 }
+        Menu.Colors.HeaderPink = { r = 170, g = 60, b = 255 }
+        Menu.Colors.SelectedBg = { r = 170, g = 60, b = 255 }
         Menu.Banner.imageUrl = "https://i.imgur.com/8wGWjBh.png"
-        Menu.CurrentTheme = "Red"
+        Menu.CurrentTheme = "Pheze"
     end
 
     if Menu.Banner.enabled and Menu.Banner.imageUrl then
@@ -180,20 +189,20 @@ function Menu.ApplyTheme(themeName)
 end
 
 Menu.Position = {
-    x = 42,
-    y = 56,
-    width = 840,
-    itemHeight = 46,
-    mainMenuHeight = 42,
-    headerHeight = 96,
-    footerHeight = 40,
-    footerSpacing = 10,
-    mainMenuSpacing = 10,
-    footerRadius = 14,
-    itemRadius = 14,
-    scrollbarWidth = 6,
-    scrollbarPadding = 8,
-    headerRadius = 16
+    x = 60,
+    y = 80,
+    width = 340,
+    itemHeight = 30,
+    mainMenuHeight = 24,
+    headerHeight = 90,
+    footerHeight = 25,
+    footerSpacing = 4,
+    mainMenuSpacing = 4,
+    footerRadius = 4,
+    itemRadius = 4,
+    scrollbarWidth = 12,
+    scrollbarPadding = 3,
+    headerRadius = 6
 }
 Menu.Scale = 1.0
 
@@ -256,28 +265,24 @@ function Menu.DrawText(x, y, text, size_px, r, g, b, a)
 end
 
 function Menu.DrawHeader()
-    local scaledPos = Menu.GetScaledPosition()
-    local scale = Menu.Scale or 1.0
-    local x = scaledPos.x
-    local y = scaledPos.y
-    local width = scaledPos.width - 1
-    local height = scaledPos.headerHeight
+    local p = Menu.GetScaledPosition()
+    local x = p.x
+    local y = p.y
+    local w = p.width - 1
+    local h = p.headerHeight
 
     if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
-        Susano.DrawImage(Menu.bannerTexture, x, y, width, Menu.Banner.height * scale, 1, 1, 1, 1, 0)
+        Susano.DrawImage(Menu.bannerTexture, x, y, w, Menu.Banner.height * (Menu.Scale or 1.0), 1, 1, 1, 1, 0)
         return
     end
 
-    Menu.DrawRect(x, y, width, height, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, 245)
-    Menu.DrawRect(x + 14, y + 12, width - 28, height - 24, Menu.Colors.CardBackground.r, Menu.Colors.CardBackground.g, Menu.Colors.CardBackground.b, 135)
-    Menu.DrawRect(x, y + height - 3, width, 3, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
-    Menu.DrawRect(x + 22, y + 18, 3, height - 36, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
-    Menu.DrawRect(x + width - 124, y + 18, 92, 24, Menu.Colors.CardBackground.r, Menu.Colors.CardBackground.g, Menu.Colors.CardBackground.b, 220)
-    Menu.DrawRect(x + width - 124, y + 39, 92, 3, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
-    Menu.DrawText(x + width - 106, y + 22, "PRO UI", 12, 255, 255, 255, 235)
+    Menu.DrawRect(x, y, w, h, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, 255)
+    Menu.DrawRect(x + 10, y + 10, w - 20, h - 20, Menu.Colors.CardBackground.r, Menu.Colors.CardBackground.g, Menu.Colors.CardBackground.b, 200)
+    Menu.DrawRect(x, y + h - 2, w, 2, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+    Menu.DrawRect(x + 16, y + 14, 3, h - 28, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
 
-    Menu.DrawText(x + 40, y + 16, "MACHO X", 26, 255, 255, 255, 255)
-    Menu.DrawText(x + 40, y + 52, "pro interface", 12, Menu.Colors.TextMuted.r, Menu.Colors.TextMuted.g, Menu.Colors.TextMuted.b, 220)
+    Menu.DrawText(x + 30, y + 18, "PHEZE", 22, 1.0, 1.0, 1.0, 1.0)
+    Menu.DrawText(x + 30, y + 46, "premium interface", 11, Menu.Colors.TextMuted.r / 255.0, Menu.Colors.TextMuted.g / 255.0, Menu.Colors.TextMuted.b / 255.0, 0.95)
 end
 
 function Menu.DrawScrollbar(x, startY, visibleHeight, selectedIndex, totalItems, isMainMenu, menuWidth)
@@ -448,13 +453,12 @@ function Menu.DrawTabs(category, x, startY, width, tabHeight)
                 end
             end
 
-            Menu.DrawRect(selectorX, startY + (4 * scale), (4 * scale), tabHeight - (8 * scale), Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+            Menu.DrawRect(selectorX, startY, (3 * scale), tabHeight, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
         end
 
-        local tabBg = isSelected and Menu.Colors.CardBackground or Menu.Colors.TabInactive
-        Menu.DrawRect(tabX, startY, currentTabWidth, tabHeight, tabBg.r, tabBg.g, tabBg.b, isSelected and 230 or 220)
+        Menu.DrawRect(tabX, startY, currentTabWidth, tabHeight, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, isSelected and 0 or 50)
 
-        local textSize = 18
+        local textSize = 17
         local scaledTextSize = textSize * scale
         local textY = startY + tabHeight / 2 - (scaledTextSize / 2) + (1 * scale)
         local textWidth = 0
@@ -497,7 +501,7 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
     local scale = Menu.Scale or 1.0
     
     if item.isSeparator then
-        Menu.DrawRect(x, itemY, width, itemHeight, Menu.Colors.ItemBackground.r, Menu.Colors.ItemBackground.g, Menu.Colors.ItemBackground.b, 228)
+        Menu.DrawRect(x, itemY, width, itemHeight, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, 50)
 
         if item.separatorText then
             local textY = itemY + itemHeight / 2 - (7 * scale)
@@ -547,7 +551,7 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
         return
     end
 
-    Menu.DrawRect(x, itemY, width, itemHeight, Menu.Colors.ItemBackground.r, Menu.Colors.ItemBackground.g, Menu.Colors.ItemBackground.b, 228)
+    Menu.DrawRect(x, itemY, width, itemHeight, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, 50)
 
     if isSelected then
         if Menu.SelectorY == 0 then
@@ -561,8 +565,6 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
         end
         
         local drawY = Menu.SelectorY
-
-        Menu.DrawRect(x + (8 * scale), drawY + (4 * scale), width - (16 * scale), itemHeight - (8 * scale), Menu.Colors.ItemSelectedOverlay.r, Menu.Colors.ItemSelectedOverlay.g, Menu.Colors.ItemSelectedOverlay.b, 110)
 
         local baseR = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.r) and (Menu.Colors.SelectedBg.r / 255.0) or 1.0
         local baseG = (Menu.Colors.SelectedBg and Menu.Colors.SelectedBg.g) and (Menu.Colors.SelectedBg.g / 255.0) or 0.0
@@ -653,17 +655,19 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
             end
         end
 
-        Menu.DrawRect(selectorX + (2 * scale), drawY + (5 * scale), 4, itemHeight - (10 * scale), Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+        Menu.DrawRect(x + (10 * scale), itemY + (6 * scale), width - (20 * scale), itemHeight - (12 * scale), Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 90)
+
+        Menu.DrawRect(selectorX, drawY, 3, itemHeight, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
     end
 
-    local textX = x + (24 * scale)
+    local textX = x + (16 * scale)
     local textY = itemY + itemHeight / 2 - (8 * scale)
     local textSize = 17 * scale
-    Menu.DrawText(textX, textY, item.name, 18, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 1.0)
+    Menu.DrawText(textX, textY, item.name, 17, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 1.0)
 
     if item.type == "toggle" then
-        local toggleWidth = 38 * scale
-        local toggleHeight = 18 * scale
+        local toggleWidth = 36 * scale
+        local toggleHeight = 16 * scale
         local toggleX = x + width - toggleWidth - (16 * scale)
         local toggleY = itemY + (itemHeight / 2) - (toggleHeight / 2)
         local toggleRadius = toggleHeight / 2
@@ -726,7 +730,7 @@ function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
         end
 
         if item.hasSlider then
-            local sliderWidth = 92 * scale
+            local sliderWidth = 85 * scale
             local sliderHeight = 6 * scale
             local sliderX = x + width - sliderWidth - (95 * scale)
             local sliderY = itemY + (itemHeight / 2) - (sliderHeight / 2)
@@ -1183,7 +1187,7 @@ function Menu.DrawCategories()
             end
             
             local text = tab.name
-            local textSize = 16
+            local textSize = 15
             local textWidth = 0
             if Susano and Susano.GetTextWidth then
                 textWidth = Susano.GetTextWidth(text, textSize)
@@ -1217,7 +1221,7 @@ function Menu.DrawCategories()
             local isSelected = (categoryIndex == Menu.CurrentCategory)
 
             local itemY = startY + mainMenuHeight + mainMenuSpacing + (displayIndex - 1) * itemHeight
-            Menu.DrawRect(x, itemY, width, itemHeight, Menu.Colors.ItemBackground.r, Menu.Colors.ItemBackground.g, Menu.Colors.ItemBackground.b, 228)
+            Menu.DrawRect(x, itemY, width, itemHeight, Menu.Colors.BackgroundDark.r, Menu.Colors.BackgroundDark.g, Menu.Colors.BackgroundDark.b, 50)
 
             if isSelected then
                 if Menu.CategorySelectorY == 0 then
@@ -1321,7 +1325,7 @@ function Menu.DrawCategories()
                     end
                 end
 
-                Menu.DrawRect(selectorX + (2 * scale), drawY + (5 * scale), 4, itemHeight - (10 * scale), Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
+                Menu.DrawRect(selectorX, drawY, 3, itemHeight, Menu.Colors.SelectedBg.r, Menu.Colors.SelectedBg.g, Menu.Colors.SelectedBg.b, 255)
             end
 
             local textX = x + 16
@@ -1401,11 +1405,11 @@ function Menu.DrawLoadingBar(alpha)
 
     local loadingText = ""
     if elapsedTime < 1000 then
-        loadingText = "Loading UI"
+        loadingText = "Injecting"
     elseif elapsedTime < 2000 then
-        loadingText = "Ready"
+        loadingText = "Have Fun !"
     else
-        loadingText = "Ready"
+        loadingText = "Have Fun !"
     end
 
     if loadingText ~= "" then
@@ -1486,7 +1490,7 @@ function Menu.DrawFooter()
     local x = scaledPos.x
     local footerY
     local totalHeight
-    
+
     local bannerHeight = Menu.Banner.enabled and (Menu.Banner.height * scale) or scaledPos.headerHeight
 
     if Menu.OpenedCategory then
@@ -1517,29 +1521,25 @@ function Menu.DrawFooter()
     local footerRounding = scaledPos.footerRadius
 
     if Susano and Susano.DrawRectFilled then
-        Susano.DrawRectFilled(x, footerY, footerWidth, footerHeight,
-            0.0, 0.0, 0.0, 1.0,
-            footerRounding)
+        Susano.DrawRectFilled(
+            x, footerY, footerWidth, footerHeight,
+            Menu.Colors.FooterBlack.r / 255.0,
+            Menu.Colors.FooterBlack.g / 255.0,
+            Menu.Colors.FooterBlack.b / 255.0,
+            1.0,
+            footerRounding
+        )
     else
-        Menu.DrawRoundedRect(x, footerY, footerWidth, footerHeight, 0, 0, 0, 255, footerRounding)
+        Menu.DrawRoundedRect(x, footerY, footerWidth, footerHeight, Menu.Colors.FooterBlack.r, Menu.Colors.FooterBlack.g, Menu.Colors.FooterBlack.b, 255, footerRounding)
     end
 
-    local footerPadding = 15 * scale
-    local footerSize = 13
+    local footerPadding = 12 * scale
+    local footerSize = 12
     local scaledFooterSize = footerSize * scale
     local footerTextY = footerY + (footerHeight / 2) - (scaledFooterSize / 2) + (1 * scale)
 
-    local footerText = " MACHO X  |  PRO UI "
-    local currentX = x + footerPadding
-
-    local textWidth = 0
-    if Susano and Susano.GetTextWidth then
-        textWidth = Susano.GetTextWidth(footerText, scaledFooterSize)
-    else
-        textWidth = string.len(footerText) * 8 * scale
-    end
-
-    Menu.DrawText(currentX, footerTextY, footerText, footerSize, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 1.0)
+    local footerText = "pheze premium ui"
+    Menu.DrawText(x + footerPadding, footerTextY, footerText, footerSize, Menu.Colors.TextWhite.r / 255.0, Menu.Colors.TextWhite.g / 255.0, Menu.Colors.TextWhite.b / 255.0, 0.7)
 
     local displayIndex
     local totalItems
@@ -1566,7 +1566,6 @@ function Menu.DrawFooter()
     end
 
     local posText = string.format("%d/%d", displayIndex, totalItems)
-
     local posWidth = 0
     if Susano and Susano.GetTextWidth then
         posWidth = Susano.GetTextWidth(posText, scaledFooterSize)
@@ -2827,7 +2826,7 @@ function Menu.HandleInput()
             elseif (downPressed == true) or (downDown == true and not downWasDown) then
                 Menu.CurrentCategory = Menu.CurrentCategory + 1
                 if Menu.CurrentCategory > #Menu.Categories then
-                    Menu.CurrentCategory = 1
+                    Menu.CurrentCategory = 2
                 end
             elseif (aPressed == true) or (aDown == true and not aWasDown) then
                 if Menu.TopLevelTabs then
@@ -3033,241 +3032,6 @@ end
 if Menu.Banner.enabled and Menu.Banner.imageUrl then
     Menu.LoadBannerTexture(Menu.Banner.imageUrl)
 end
-
-
--- Safe player tools module injected by ChatGPT
-Menu.PlayerTools = Menu.PlayerTools or {
-    selectedIndex = 1,
-    players = {},
-    lastRefresh = 0
-}
-
-local function _safeGetPlayerLabel(player)
-    local okName, name = pcall(function() return GetPlayerName(player) end)
-    local okServerId, serverId = pcall(function() return GetPlayerServerId(player) end)
-    if not okName or not name or name == "" then
-        name = "Unknown"
-    end
-    if not okServerId or not serverId then
-        serverId = player
-    end
-    return name .. " [" .. tostring(serverId) .. "]"
-end
-
-function Menu.RefreshPlayerToolsList()
-    Menu.PlayerTools.players = {}
-
-    local okPlayers, players = pcall(function() return GetActivePlayers() end)
-    if not okPlayers or not players then
-        Menu.PlayerTools.players = { { label = "No players", value = -1 } }
-        Menu.PlayerTools.selectedIndex = 1
-        return
-    end
-
-    for _, player in ipairs(players) do
-        local okServerId, serverId = pcall(function() return GetPlayerServerId(player) end)
-        if okServerId and serverId then
-            table.insert(Menu.PlayerTools.players, {
-                label = _safeGetPlayerLabel(player),
-                value = serverId
-            })
-        end
-    end
-
-    if #Menu.PlayerTools.players == 0 then
-        Menu.PlayerTools.players = { { label = "No players", value = -1 } }
-    end
-
-    if Menu.PlayerTools.selectedIndex > #Menu.PlayerTools.players then
-        Menu.PlayerTools.selectedIndex = 1
-    end
-end
-
-function Menu.GetPlayerToolsOptions()
-    local options = {}
-    for _, entry in ipairs(Menu.PlayerTools.players or {}) do
-        table.insert(options, entry.label)
-    end
-    if #options == 0 then
-        table.insert(options, "No players")
-    end
-    return options
-end
-
-function Menu.GetSelectedPlayerServerId()
-    local entry = Menu.PlayerTools.players[Menu.PlayerTools.selectedIndex]
-    return entry and entry.value or -1
-end
-
-function Menu.Notify(message)
-    if print then
-        print("[Menu] " .. tostring(message))
-    end
-end
-
-function Menu.SafeAttachTreeToSelf()
-    local model = `prop_tree_lficus_06`
-    RequestModel(model)
-    while not HasModelLoaded(model) do
-        Wait(10)
-    end
-
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    local obj = CreateObject(model, coords.x, coords.y, coords.z, true, true, true)
-
-    AttachEntityToEntity(
-        obj, ped, GetPedBoneIndex(ped, 0),
-        0.0, 0.0, -1.0,
-        0.0, 0.0, 0.0,
-        true, true, false, true, 1, true
-    )
-    Menu.Notify("Attached prop to local player")
-end
-
-function Menu.SafeToggleFreezeSelf(enabled)
-    local ped = PlayerPedId()
-    FreezeEntityPosition(ped, enabled == true)
-    Menu.Notify(enabled and "Local player frozen" or "Local player unfrozen")
-end
-
-function Menu.SafeFxOnSelf()
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    AddExplosion(coords.x, coords.y, coords.z, 4, 0.0, false, false, 0.0)
-    Menu.Notify("Played local FX")
-end
-
-function Menu.InjectSafePlayerTab()
-    Menu.RefreshPlayerToolsList()
-
-    local safeTab = {
-        name = "Player Tools",
-        autoOpen = true,
-        categories = {
-            {
-                name = "Online Players",
-                hasTabs = true,
-                tabs = {
-                    {
-                        name = "Selector",
-                        items = {
-                            { isSeparator = true, separatorText = "Players" },
-                            {
-                                name = "Target Player",
-                                type = "selector",
-                                options = Menu.GetPlayerToolsOptions(),
-                                selected = Menu.PlayerTools.selectedIndex
-                            },
-                            {
-                                name = "Refresh Player List",
-                                type = "action",
-                                onClick = function()
-                                    Menu.RefreshPlayerToolsList()
-                                    local topTab = Menu.TopLevelTabs and Menu.TopLevelTabs[#Menu.TopLevelTabs]
-                                    if topTab and topTab.categories and topTab.categories[1] and topTab.categories[1].tabs and topTab.categories[1].tabs[1] then
-                                        local selector = topTab.categories[1].tabs[1].items[2]
-                                        if selector then
-                                            selector.options = Menu.GetPlayerToolsOptions()
-                                            selector.selected = Menu.PlayerTools.selectedIndex
-                                        end
-                                    end
-                                    Menu.Notify("Player list refreshed")
-                                end
-                            }
-                        }
-                    },
-                    {
-                        name = "Actions",
-                        items = {
-                            { isSeparator = true, separatorText = "Safe Actions" },
-                            {
-                                name = "Attach Prop To Self",
-                                type = "action",
-                                onClick = function()
-                                    Menu.SafeAttachTreeToSelf()
-                                end
-                            },
-                            {
-                                name = "Freeze Self",
-                                type = "toggle",
-                                value = false,
-                                onClick = function(value)
-                                    Menu.SafeToggleFreezeSelf(value)
-                                end
-                            },
-                            {
-                                name = "Local FX",
-                                type = "action",
-                                onClick = function()
-                                    Menu.SafeFxOnSelf()
-                                end
-                            }
-                        }
-                    },
-                    {
-                        name = "Info",
-                        items = {
-                            { isSeparator = true, separatorText = "Selection" },
-                            {
-                                name = "Selected Player",
-                                type = "action",
-                                onClick = function()
-                                    local serverId = Menu.GetSelectedPlayerServerId()
-                                    if serverId == -1 then
-                                        Menu.Notify("No player selected")
-                                    else
-                                        local entry = Menu.PlayerTools.players[Menu.PlayerTools.selectedIndex]
-                                        Menu.Notify("Selected: " .. tostring(entry and entry.label or serverId))
-                                    end
-                                end
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    Menu.TopLevelTabs = Menu.TopLevelTabs or {}
-    local exists = false
-    for _, tab in ipairs(Menu.TopLevelTabs) do
-        if tab and tab.name == safeTab.name then
-            exists = true
-            break
-        end
-    end
-
-    if not exists then
-        table.insert(Menu.TopLevelTabs, safeTab)
-        if not Menu.Categories or #Menu.Categories == 0 then
-            Menu.CurrentTopTab = #Menu.TopLevelTabs
-            Menu.UpdateCategoriesFromTopTab()
-        end
-    end
-end
-
-CreateThread(function()
-    while true do
-        Wait(3000)
-        Menu.RefreshPlayerToolsList()
-        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory or 1]
-        if Menu.TopLevelTabs then
-            for _, topTab in ipairs(Menu.TopLevelTabs) do
-                if topTab and topTab.name == "Player Tools" and topTab.categories and topTab.categories[1] and topTab.categories[1].tabs and topTab.categories[1].tabs[1] then
-                    local selector = topTab.categories[1].tabs[1].items[2]
-                    if selector then
-                        selector.options = Menu.GetPlayerToolsOptions()
-                        selector.selected = math.max(1, math.min(selector.selected or 1, #selector.options))
-                        Menu.PlayerTools.selectedIndex = selector.selected
-                    end
-                end
-            end
-        end
-    end
-end)
-
-Menu.InjectSafePlayerTab()
 
 
 return Menu
