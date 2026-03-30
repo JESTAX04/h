@@ -5848,7 +5848,6 @@ end)
 Menu.ApplyTheme(Menu.CurrentTheme or "Purple")
 Menu.ApplyStreamProofState(Menu.StreamProof)
 
-return Menu
 
 -- ============================================
 -- South-style UI clone layer (LITE / stable)
