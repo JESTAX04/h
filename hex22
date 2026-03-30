@@ -2254,14 +2254,18 @@ function Menu.LaunchPlayer(playerData)
 
     local target = GetPlayerFromServerId(playerData.id)
     if target == -1 then
+        print("Launch failed: player not found")
         return
     end
 
     local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
+    if not ped or ped == 0 then
+        print("Launch failed: ped not found")
+        return
+    end
 
     if NetworkRequestControlOfEntity then
-        for i = 1, 20 do
+        for i = 1, 30 do
             NetworkRequestControlOfEntity(ped)
             if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
                 break
@@ -2275,13 +2279,30 @@ function Menu.LaunchPlayer(playerData)
     end
 
     if SetPedToRagdoll then
-        pcall(SetPedToRagdoll, ped, 2500, 2500, 0, true, true, false)
+        pcall(SetPedToRagdoll, ped, 3000, 3000, 0, true, true, false)
+    end
+
+    if FreezeEntityPosition then
+        pcall(FreezeEntityPosition, ped, false)
+    end
+
+    if GetEntityCoords and SetEntityCoords then
+        local coords = GetEntityCoords(ped)
+        local x = coords.x or coords[1] or 0.0
+        local y = coords.y or coords[2] or 0.0
+        local z = coords.z or coords[3] or 0.0
+
+        pcall(SetEntityCoords, ped, x, y, z + 1.5, false, false, false, false)
+        Wait(0)
+        pcall(SetEntityCoords, ped, x, y, z + 3.0, false, false, false, false)
     end
 
     if SetEntityVelocity then
-        pcall(SetEntityVelocity, ped, 0.0, 0.0, 65.0)
+        pcall(SetEntityVelocity, ped, 0.0, 0.0, 80.0)
         Wait(0)
-        pcall(SetEntityVelocity, ped, 0.0, 0.0, 72.0)
+        pcall(SetEntityVelocity, ped, 0.0, 0.0, 95.0)
+        Wait(0)
+        pcall(SetEntityVelocity, ped, 0.0, 0.0, 110.0)
     end
 
     if ApplyForceToEntity then
@@ -2289,7 +2310,17 @@ function Menu.LaunchPlayer(playerData)
             ApplyForceToEntity,
             ped,
             1,
-            0.0, 0.0, 520.0,
+            0.0, 0.0, 700.0,
+            0.0, 0.0, 0.0,
+            0,
+            true, true, true, false, true
+        )
+        Wait(0)
+        pcall(
+            ApplyForceToEntity,
+            ped,
+            1,
+            0.0, 0.0, 900.0,
             0.0, 0.0, 0.0,
             0,
             true, true, true, false, true
