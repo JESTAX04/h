@@ -2310,6 +2310,50 @@ end
 
 function Menu.LaunchPlayer(playerData)
     if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 20 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
+    end
+
+    if SetPedToRagdoll then
+        SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
+    end
+
+    if SetEntityVelocity then
+        SetEntityVelocity(
+            ped,
+            math.random(-2, 2) * 1.0,
+            math.random(-2, 2) * 1.0,
+            60.0
+        )
+    end
+
+    if ApplyForceToEntity then
+        ApplyForceToEntity(
+            ped,
+            1,
+            math.random(-5, 5) * 1.0,
+            math.random(-5, 5) * 1.0,
+            220.0,
+            0.0, 0.0, 0.0,
+            0,
+            true, true, true, false, true
+        )
+    end
+end
 
 function Menu.HEXAllPlayers()
     if not GetActivePlayers then return end
