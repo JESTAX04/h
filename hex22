@@ -175,18 +175,18 @@ end
 Menu.Position = {
     x = 50,
     y = 100,
-    width = 360,
-    itemHeight = 34,
-    mainMenuHeight = 26,
-    headerHeight = 100,
-    footerHeight = 26,
-    footerSpacing = 5,
-    mainMenuSpacing = 5,
-    footerRadius = 4,
-    itemRadius = 4,
+    width = 404,
+    itemHeight = 38,
+    mainMenuHeight = 34,
+    headerHeight = 114,
+    footerHeight = 30,
+    footerSpacing = 8,
+    mainMenuSpacing = 8,
+    footerRadius = 10,
+    itemRadius = 10,
     scrollbarWidth = 12,
     scrollbarPadding = 3,
-    headerRadius = 6
+    headerRadius = 14
 }
 Menu.Scale = 1.0
 
@@ -3409,18 +3409,20 @@ function Menu.GetThemePalette()
 
     return {
         accent = accent,
-        accentSoft = Menu.MixColor(accent, white, 0.14),
-        accentDark = Menu.MixColor(accent, black, 0.40),
-        panel = { r = 9, g = 12, b = 18 },
-        panel2 = { r = 14, g = 18, b = 27 },
-        panel3 = { r = 20, g = 24, b = 36 },
-        panel4 = { r = 27, g = 32, b = 46 },
-        track = { r = 40, g = 46, b = 61 },
-        border = Menu.MixColor(accent, white, 0.26),
-        borderDim = { r = 66, g = 74, b = 92 },
-        text = { r = 245, g = 247, b = 252 },
-        muted = { r = 165, g = 173, b = 190 },
-        soft = { r = 118, g = 126, b = 142 },
+        accentSoft = Menu.MixColor(accent, white, 0.18),
+        accentDark = Menu.MixColor(accent, black, 0.46),
+        accentGlow = Menu.MixColor(accent, white, 0.34),
+        panel = { r = 7, g = 10, b = 16 },
+        panel2 = { r = 11, g = 15, b = 24 },
+        panel3 = { r = 16, g = 21, b = 32 },
+        panel4 = { r = 23, g = 28, b = 42 },
+        panelGlass = { r = 30, g = 36, b = 54 },
+        track = { r = 44, g = 52, b = 72 },
+        border = Menu.MixColor(accent, white, 0.30),
+        borderDim = { r = 72, g = 82, b = 104 },
+        text = { r = 248, g = 250, b = 255 },
+        muted = { r = 172, g = 181, b = 198 },
+        soft = { r = 126, g = 136, b = 156 },
         white = white,
         black = black
     }
@@ -3459,6 +3461,12 @@ function Menu.DrawFramedPanel(x, y, width, height, fillColor, fillAlpha, borderC
 
     Menu.DrawRoundedPanel(x, y, width, height, borderColor, borderAlpha, rounded)
     Menu.DrawRoundedPanel(x + bw, y + bw, width - (bw * 2), height - (bw * 2), fillColor, fillAlpha, math.max(0, rounded - bw))
+end
+
+
+function Menu.DrawGlassHighlight(x, y, width, height, radius, alpha)
+    local glowAlpha = alpha or 0.06
+    Menu.DrawRoundedPanel(x + 1, y + 1, width - 2, math.max(8, height * 0.34), { r = 255, g = 255, b = 255 }, glowAlpha, radius)
 end
 
 function Menu.DrawSoftShadow(x, y, width, height, radius, strength, spread)
@@ -4695,7 +4703,7 @@ function Menu.DrawFooter()
 
     if Menu.DrawPill then
         Menu.DrawPill(pillX, pillY, streamText, 10, fill, border, palette.text, accent)
-        Menu.DrawPill(pillX + (122 * scale), pillY, modeText, 9, palette.panel2, palette.borderDim, palette.muted, accent)
+        Menu.DrawPill(pillX + (136 * scale), pillY, modeText, 9, palette.panelGlass or palette.panel2, palette.borderDim, palette.muted, accent)
     end
 end
 
