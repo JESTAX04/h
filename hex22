@@ -6004,4 +6004,263 @@ function Menu.DrawFooter()
     end
 end
 
+
+-- ============================================
+-- Pro glass sidebar icon UI
+-- ============================================
+Menu.ProGlassUI = Menu.ProGlassUI or {
+    slide = 1.0,
+    target = 1.0,
+    sidebarWidth = 118
+}
+
+function Menu.GetSidebarIcon(label)
+    local name = string.lower(tostring(label or ""))
+    if string.find(name, "online", 1, true) then return "O" end
+    if string.find(name, "self", 1, true) then return "S" end
+    if string.find(name, "vehicle", 1, true) or string.find(name, "car", 1, true) then return "V" end
+    if string.find(name, "weapon", 1, true) then return "W" end
+    if string.find(name, "teleport", 1, true) then return "T" end
+    if string.find(name, "settings", 1, true) then return "G" end
+    if string.find(name, "player", 1, true) then return "P" end
+    if string.find(name, "menu", 1, true) then return "M" end
+    return ">"
+end
+
+function Menu.GetSidebarCategoryName(index)
+    local category = Menu.Categories and Menu.Categories[index] or nil
+    if not category then return "?" end
+    return tostring(category.name or "?")
+end
+
+function Menu.DrawSidebarRail(bounds, palette)
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.ProGlassUI.sidebarWidth or 118) * scale
+    local x = bounds.x + (8 * scale)
+    local y = bounds.y + (8 * scale)
+    local h = bounds.totalHeight - (16 * scale)
+
+    Menu.DrawFramedPanel(x, y, sidebarW, h, palette.panel3, 0.78, palette.borderDim, 0.24, 15 * scale, 1)
+    Menu.DrawRoundedPanel(x + 1, y + 1, sidebarW - 2, h - 2, palette.white, 0.02, 14 * scale)
+    Menu.DrawRoundedPanel(x + 1, y + 1, sidebarW - 2, 52 * scale, palette.accent, 0.10, 14 * scale)
+
+    Menu.DrawText(x + (22 * scale), y + (16 * scale), "J", 24, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
+    Menu.DrawText(x + (18 * scale), y + (44 * scale), "sidebar", 10, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.90)
+
+    local startY = y + (68 * scale)
+    local itemH = 52 * scale
+    local totalCategories = math.max(0, (Menu.Categories and #Menu.Categories or 0) - 1)
+    local visible = math.min(totalCategories, 7)
+
+    for i = 1, visible do
+        local categoryIndex = i + (Menu.CategoryScrollOffset or 0) + 1
+        if categoryIndex <= (Menu.Categories and #Menu.Categories or 0) then
+            local cy = startY + ((i - 1) * itemH)
+            local selected = (not Menu.OpenedCategory and Menu.CurrentCategory == categoryIndex) or (Menu.OpenedCategory == categoryIndex)
+            local label = Menu.GetSidebarCategoryName(categoryIndex)
+            local icon = Menu.GetSidebarIcon(label)
+
+            Menu.DrawFramedPanel(
+                x + (10 * scale),
+                cy,
+                sidebarW - (20 * scale),
+                42 * scale,
+                selected and palette.panel4 or palette.panel2,
+                selected and 0.96 or 0.70,
+                selected and palette.accent or palette.borderDim,
+                selected and 0.92 or 0.16,
+                12 * scale,
+                1
+            )
+
+            if selected then
+                Menu.DrawRoundedPanel(x + (12 * scale), cy + (1 * scale), 4 * scale, 40 * scale, palette.accent, 1.0, 3 * scale)
+            end
+
+            Menu.DrawFramedPanel(
+                x + (18 * scale),
+                cy + (8 * scale),
+                26 * scale,
+                26 * scale,
+                selected and palette.accentDark or palette.panel3,
+                selected and 0.94 or 0.88,
+                selected and palette.border or palette.borderDim,
+                selected and 0.30 or 0.14,
+                13 * scale,
+                1
+            )
+
+            Menu.DrawText(x + (27 * scale), cy + (14 * scale), icon, 11, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
+
+            local short = label
+            if string.len(short) > 10 then
+                short = string.sub(short, 1, 10)
+            end
+            Menu.DrawText(x + (52 * scale), cy + (14 * scale), short, 10, (selected and palette.text.r or palette.muted.r) / 255.0, (selected and palette.text.g or palette.muted.g) / 255.0, (selected and palette.text.b or palette.muted.b) / 255.0, 0.96)
+        end
+    end
+end
+
+local _Menu_OriginalGetScaledPosition_ProGlass = Menu.GetScaledPosition
+function Menu.GetScaledPosition()
+    local pos = _Menu_OriginalGetScaledPosition_ProGlass()
+    local scale = Menu.Scale or 1.0
+    local slide = Menu.ProGlassUI and Menu.ProGlassUI.slide or 1.0
+    local offset = (1.0 - slide) * -(86 * scale)
+    pos.x = pos.x + offset
+    pos.width = math.max(pos.width, 520 * scale)
+    pos.headerHeight = math.max(pos.headerHeight, 100 * scale)
+    pos.itemHeight = math.max(pos.itemHeight, 40 * scale)
+    pos.mainMenuHeight = math.max(pos.mainMenuHeight, 36 * scale)
+    pos.footerHeight = math.max(pos.footerHeight, 34 * scale)
+    return pos
+end
+
+local _Menu_OriginalDrawBackground_ProGlass = Menu.DrawBackground
+function Menu.DrawBackground()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.ProGlassUI.sidebarWidth or 118) * scale
+    local x = bounds.x
+    local y = bounds.y
+    local w = bounds.width
+    local h = bounds.totalHeight
+
+    Menu.DrawRoundedPanel(0, 0, 5000, 5000, { r = 2, g = 4, b = 8 }, 0.16, 0)
+    Menu.DrawRoundedPanel(14 * scale, 14 * scale, 5000, 5000, { r = 255, g = 255, b = 255 }, 0.012, 0)
+    Menu.DrawSoftShadow(x + (8 * scale), y + (10 * scale), w - (10 * scale), h - (8 * scale), 22 * scale, 0.34, 14)
+    Menu.DrawFramedPanel(x, y, w, h, palette.panel, 0.94, palette.border, 0.62, 18 * scale, 1)
+    Menu.DrawRoundedPanel(x + 1, y + 1, w - 2, h - 2, palette.white, 0.016, 17 * scale)
+
+    Menu.DrawSidebarRail(bounds, palette)
+
+    Menu.DrawFramedPanel(x + sidebarW + (16 * scale), y + (8 * scale), w - sidebarW - (24 * scale), h - (16 * scale), palette.panel2, 0.78, palette.borderDim, 0.16, 14 * scale, 1)
+    Menu.DrawRoundedPanel(x + sidebarW + (16 * scale), y + (8 * scale), w - sidebarW - (24 * scale), 56 * scale, palette.accent, 0.055, 14 * scale)
+    Menu.DrawRoundedPanel(x + sidebarW + (16 * scale), bounds.barY + (4 * scale), w - sidebarW - (24 * scale), bounds.barHeight - (8 * scale), palette.panel3, 0.74, 10 * scale)
+    Menu.DrawRoundedPanel(x + sidebarW + (16 * scale), bounds.footerY + (4 * scale), w - sidebarW - (24 * scale), bounds.footerHeight - (8 * scale), palette.panel3, 0.62, 10 * scale)
+end
+
+local _Menu_OriginalDrawHeader_ProGlass = Menu.DrawHeader
+function Menu.DrawHeader()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.ProGlassUI.sidebarWidth or 118) * scale
+    local x = bounds.x + sidebarW + (18 * scale)
+    local y = bounds.y + (10 * scale)
+    local w = bounds.width - sidebarW - (28 * scale)
+    local h = bounds.bannerHeight - (18 * scale)
+
+    Menu.DrawFramedPanel(x, y, w, h, palette.panel2, 0.82, palette.borderDim, 0.16, 14 * scale, 1)
+    Menu.DrawRoundedPanel(x + 1, y + 1, w - 2, h - 2, palette.white, 0.022, 13 * scale)
+    Menu.DrawRoundedPanel(x + 1, y + h - (3 * scale), w - 2, 3 * scale, palette.accent, 0.72, 2 * scale)
+    Menu.DrawRoundedPanel(x + (14 * scale), y + (12 * scale), w * 0.38, 40 * scale, palette.accent, 0.05, 18 * scale)
+
+    local title = (Menu.GetHeaderTitle and Menu.GetHeaderTitle()) or "JESTA"
+    local subtitle = (Menu.GetHeaderSubtitle and Menu.GetHeaderSubtitle()) or "glass ui pro"
+    Menu.DrawText(x + (18 * scale), y + (14 * scale), title, 24, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (18 * scale), y + (41 * scale), subtitle, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.95)
+
+    if Menu.DrawPill then
+        Menu.DrawPill(x + w - (226 * scale), y + (12 * scale), "GLASS UI PRO", 10, palette.panel3, palette.borderDim, palette.text, palette.accent)
+        Menu.DrawPill(x + w - (108 * scale), y + (12 * scale), "ANIMATED", 10, palette.panel3, palette.borderDim, palette.text, palette.soft)
+    end
+end
+
+local _Menu_OriginalDrawTabs_ProGlass = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    if not category or not category.tabs then return end
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    local sidebarW = (Menu.ProGlassUI.sidebarWidth or 118) * scale
+    local cx = x + sidebarW + (24 * scale)
+    local cw = width - sidebarW - (38 * scale)
+    local count = #category.tabs
+    if count <= 0 then return end
+    local gap = 8 * scale
+    local tabW = (cw - (gap * (count - 1))) / count
+
+    for i, tab in ipairs(category.tabs) do
+        local tx = cx + ((i - 1) * (tabW + gap))
+        local ty = startY + (6 * scale)
+        local selected = (i == Menu.CurrentTab)
+        Menu.DrawFramedPanel(tx, ty, tabW, tabHeight - (12 * scale), selected and palette.panel4 or palette.panel3, selected and 0.96 or 0.78, selected and palette.accent or palette.borderDim, selected and 0.86 or 0.16, 10 * scale, 1)
+        if selected then
+            Menu.DrawRoundedPanel(tx + 1, ty + 1, tabW - 2, 3 * scale, palette.accent, 0.88, 2 * scale)
+        end
+        local tw = Menu.GetTextWidth(tab.name or "", 12)
+        local tc = selected and palette.text or palette.muted
+        Menu.DrawText(tx + (tabW / 2) - (tw / 2), ty + ((tabHeight - (12 * scale)) / 2) - (6 * scale), tab.name or "", 12, tc.r / 255.0, tc.g / 255.0, tc.b / 255.0, 0.98)
+    end
+end
+
+local _Menu_OriginalDrawItem_ProGlass = Menu.DrawItem
+function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    local sidebarW = (Menu.ProGlassUI.sidebarWidth or 118) * scale
+
+    if item and item.isSeparator then
+        return _Menu_OriginalDrawItem_ProGlass(x, itemY, width, itemHeight, item, isSelected)
+    end
+
+    local px = x + sidebarW + (20 * scale)
+    local py = itemY + (2 * scale)
+    local pw = width - sidebarW - (30 * scale)
+    local ph = itemHeight - (4 * scale)
+    Menu.DrawFramedPanel(px, py, pw, ph, isSelected and palette.panel4 or palette.panel3, isSelected and 0.96 or 0.80, isSelected and palette.accent or palette.borderDim, isSelected and 0.90 or 0.16, 11 * scale, 1)
+    Menu.DrawRoundedPanel(px + 1, py + 1, pw - 2, ph - 2, palette.white, isSelected and 0.024 or 0.012, 10 * scale)
+    if isSelected then
+        Menu.DrawRoundedPanel(px + 1, py + 1, 4 * scale, ph - 2, palette.accent, 1.0, 3 * scale)
+    end
+
+    local label = tostring(item and item.name or "Item")
+    local icon = Menu.GetSidebarIcon(label)
+    Menu.DrawFramedPanel(px + (12 * scale), py + (ph / 2) - (10 * scale), 24 * scale, 20 * scale, isSelected and palette.accentDark or palette.panel2, 0.96, isSelected and palette.border or palette.borderDim, isSelected and 0.32 or 0.12, 10 * scale, 1)
+    Menu.DrawText(px + (21 * scale), py + (ph / 2) - (6 * scale), icon, 11, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
+    Menu.DrawText(px + (44 * scale), py + (ph / 2) - (6 * scale), label, 12, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
+
+    if item and (item.type == "toggle" or item.type == "toggle_selector") then
+        Menu.DrawToggleSwitch(px + pw - (54 * scale), py + (ph / 2) - (10 * scale), item.value == true)
+    elseif item and item.type == "selector" and item.options then
+        local selectedIndex = item.selected or 1
+        local selectedText = tostring(item.options[selectedIndex] or "")
+        local sw = Menu.GetTextWidth(selectedText, 11)
+        Menu.DrawText(px + pw - sw - (18 * scale), py + (ph / 2) - (6 * scale), selectedText, 11, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.96)
+    end
+end
+
+local _Menu_OriginalDrawFooter_ProGlass = Menu.DrawFooter
+function Menu.DrawFooter()
+    local palette = Menu.GetThemePalette()
+    local bounds = Menu.GetMenuBounds()
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.ProGlassUI.sidebarWidth or 118) * scale
+    local x = bounds.x + sidebarW + (18 * scale)
+    local w = bounds.width - sidebarW - (28 * scale)
+    local y = bounds.footerY
+
+    Menu.DrawFramedPanel(x, y, w, bounds.footerHeight, palette.panel3, 0.80, palette.borderDim, 0.14, 10 * scale, 1)
+    Menu.DrawRoundedPanel(x + 1, y + 1, w - 2, bounds.footerHeight - 2, palette.white, 0.014, 9 * scale)
+    Menu.DrawText(x + (14 * scale), y + (bounds.footerHeight / 2) - (7 * scale), "JESTA MENU", 11, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.96)
+    Menu.DrawText(x + (14 * scale), y + (bounds.footerHeight / 2) + (4 * scale), "icons • animated • glass", 9, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.88)
+
+    local rightText = tostring(Menu.CurrentTheme or "Purple")
+    local rw = Menu.GetTextWidth(rightText, 10)
+    Menu.DrawText(x + w - rw - (14 * scale), y + (bounds.footerHeight / 2) - (5 * scale), rightText, 10, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.94)
+end
+
+local _Menu_OriginalRender_ProGlass = Menu.Render
+function Menu.Render()
+    local dt = 0.016
+    if GetFrameTime then dt = GetFrameTime() end
+    Menu.ProGlassUI.target = Menu.Visible and 1.0 or 0.0
+    Menu.ProGlassUI.slide = Menu.ProGlassUI.slide + ((Menu.ProGlassUI.target - Menu.ProGlassUI.slide) * math.min(1.0, dt * 10.0))
+    if math.abs(Menu.ProGlassUI.slide - Menu.ProGlassUI.target) < 0.001 then
+        Menu.ProGlassUI.slide = Menu.ProGlassUI.target
+    end
+    return _Menu_OriginalRender_ProGlass()
+end
+
 return Menu
