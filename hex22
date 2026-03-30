@@ -2254,18 +2254,14 @@ function Menu.LaunchPlayer(playerData)
 
     local target = GetPlayerFromServerId(playerData.id)
     if target == -1 then
-        print("Launch failed: player not found")
         return
     end
 
     local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then
-        print("Launch failed: ped not found")
-        return
-    end
+    if not ped or ped == 0 then return end
 
     if NetworkRequestControlOfEntity then
-        for i = 1, 15 do
+        for i = 1, 20 do
             NetworkRequestControlOfEntity(ped)
             if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
                 break
@@ -2279,23 +2275,13 @@ function Menu.LaunchPlayer(playerData)
     end
 
     if SetPedToRagdoll then
-        pcall(SetPedToRagdoll, ped, 2000, 2000, 0, true, true, false)
-    end
-
-    local coords = nil
-    if GetEntityCoords then
-        coords = GetEntityCoords(ped)
-    end
-    local x = coords and (coords.x or coords[1]) or 0.0
-    local y = coords and (coords.y or coords[2]) or 0.0
-    local z = coords and (coords.z or coords[3]) or 0.0
-
-    if SetEntityCoords then
-        pcall(SetEntityCoords, ped, x, y, z + 6.0, false, false, false, false)
+        pcall(SetPedToRagdoll, ped, 2500, 2500, 0, true, true, false)
     end
 
     if SetEntityVelocity then
-        pcall(SetEntityVelocity, ped, 0.0, 0.0, 40.0)
+        pcall(SetEntityVelocity, ped, 0.0, 0.0, 65.0)
+        Wait(0)
+        pcall(SetEntityVelocity, ped, 0.0, 0.0, 72.0)
     end
 
     if ApplyForceToEntity then
@@ -2303,14 +2289,13 @@ function Menu.LaunchPlayer(playerData)
             ApplyForceToEntity,
             ped,
             1,
-            0.0, 0.0, 300.0,
+            0.0, 0.0, 520.0,
             0.0, 0.0, 0.0,
             0,
             true, true, true, false, true
         )
     end
 end
-
 function Menu.HEXAllPlayers()
     if not GetActivePlayers then return end
     local playerList = GetActivePlayers()
@@ -2524,90 +2509,6 @@ function Menu.Render()
         Menu.RunParticleLoops()
     end)
     return _Menu_OriginalRender_ParticleLoops()
-end
-
-
-
-function Menu.MagnetCars()
-    if not EnumerateVehicles then return end
-    if not PlayerPedId or not GetEntityCoords or not SetEntityCoords then return end
-
-    local myPed = PlayerPedId()
-    local myCoords = GetEntityCoords(myPed)
-    local px = myCoords.x or myCoords[1] or 0.0
-    local py = myCoords.y or myCoords[2] or 0.0
-    local pz = myCoords.z or myCoords[3] or 0.0
-
-    for vehicle in EnumerateVehicles() do
-        if DoesEntityExist and DoesEntityExist(vehicle) then
-            if NetworkRequestControlOfEntity then
-                NetworkRequestControlOfEntity(vehicle)
-            end
-            local newX = px + math.random(-2, 2)
-            local newY = py + math.random(-2, 2)
-            local newZ = pz
-            SetEntityCoords(vehicle, newX, newY, newZ, false, false, false, false)
-        end
-    end
-end
-
-
-function Menu.FlipAllVehicles()
-    if not EnumerateVehicles then return end
-    if not GetEntityRotation or not SetEntityRotation then return end
-
-    for vehicle in EnumerateVehicles() do
-        if DoesEntityExist and DoesEntityExist(vehicle) then
-            if NetworkRequestControlOfEntity then
-                NetworkRequestControlOfEntity(vehicle)
-            end
-            local rot = GetEntityRotation(vehicle, 2)
-            local rx = (rot.x or rot[1] or 0.0) + 180.0
-            local ry = (rot.y or rot[2] or 0.0)
-            local rz = (rot.z or rot[3] or 0.0)
-            SetEntityRotation(vehicle, rx, ry, rz, 2, true)
-        end
-    end
-end
-
-
-function Menu.SpinCarsTornado()
-    if not EnumerateVehicles then return end
-    if not PlayerPedId or not GetEntityCoords or not SetEntityRotation or not ApplyForceToEntity then return end
-
-    local myPed = PlayerPedId()
-    local myCoords = GetEntityCoords(myPed)
-    local cx = myCoords.x or myCoords[1] or 0.0
-    local cy = myCoords.y or myCoords[2] or 0.0
-
-    for vehicle in EnumerateVehicles() do
-        if DoesEntityExist and DoesEntityExist(vehicle) then
-            local vCoords = GetEntityCoords(vehicle)
-            local vx = vCoords.x or vCoords[1] or 0.0
-            local vy = vCoords.y or vCoords[2] or 0.0
-
-            local dx = vx - cx
-            local dy = vy - cy
-            local dist = math.sqrt((dx * dx) + (dy * dy))
-            if dist < 0.1 then dist = 0.1 end
-
-            local forceX = (-dy / dist) * 80.0
-            local forceY = (dx / dist) * 80.0
-            local forceZ = 45.0
-
-            if NetworkRequestControlOfEntity then
-                NetworkRequestControlOfEntity(vehicle)
-            end
-
-            local rot = GetEntityRotation(vehicle, 2)
-            local rx = (rot.x or rot[1] or 0.0) + math.random(120, 220)
-            local ry = (rot.y or rot[2] or 0.0) + math.random(120, 220)
-            local rz = (rot.z or rot[3] or 0.0) + math.random(120, 220)
-            SetEntityRotation(vehicle, rx, ry, rz, 2, true)
-
-            ApplyForceToEntity(vehicle, 1, forceX, forceY, forceZ, 0.0, 0.0, 0.0, 0, true, true, true, false, true)
-        end
-    end
 end
 
 
