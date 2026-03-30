@@ -2248,24 +2248,18 @@ function Menu.HEXPlayer(playerData)
 end
 
 
-function Menu.LaunchPlayer(playerData)
+
+function Menu.LaunchPlayerV2(playerData)
     if not playerData then return end
-    if not GetPlayerFromServerId or not GetPlayerPed then return end
 
     local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then
-        print("Launch failed: player not found")
-        return
-    end
+    if target == -1 then return end
 
     local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then
-        print("Launch failed: ped not found")
-        return
-    end
+    if not ped or ped == 0 then return end
 
     if NetworkRequestControlOfEntity then
-        for i = 1, 30 do
+        for i = 1, 25 do
             NetworkRequestControlOfEntity(ped)
             if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
                 break
@@ -2274,16 +2268,70 @@ function Menu.LaunchPlayer(playerData)
         end
     end
 
-    if ClearPedTasksImmediately then
-        pcall(ClearPedTasksImmediately, ped)
+    if SetPedToRagdoll then
+        SetPedToRagdoll(ped, 3000, 3000, 0, true, true, false)
+    end
+
+    Wait(50)
+
+    if SetEntityVelocity then
+        SetEntityVelocity(ped, 0.0, 0.0, 20.0)
+    end
+
+    if ApplyForceToEntity then
+        for i = 1, 12 do
+            ApplyForceToEntity(
+                ped,
+                1,
+                0.0, 0.0, 80.0,
+                0.0, 0.0, 0.0,
+                0,
+                true, true, true, false, true
+            )
+            Wait(0)
+        end
+    end
+end
+
+function Menu.LaunchPlayer(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then
+        return
+    end
+
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 20 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
     end
 
     if SetPedToRagdoll then
-        pcall(SetPedToRagdoll, ped, 3000, 3000, 0, true, true, false)
+        SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
     end
 
-    if FreezeEntityPosition then
-        pcall(FreezeEntityPosition, ped, false)
+    if SetEntityVelocity then
+        SetEntityVelocity(ped, 0.0, 0.0, 50.0)
+    end
+
+    if ApplyForceToEntity then
+        ApplyForceToEntity(
+            ped,
+            1,
+            0.0, 0.0, 400.0,
+            0.0, 0.0, 0.0,
+            0,
+            true, true, true, false, true
+        )
     end
 
     if GetEntityCoords and AddExplosion then
@@ -2291,17 +2339,10 @@ function Menu.LaunchPlayer(playerData)
         local x = coords.x or coords[1] or 0.0
         local y = coords.y or coords[2] or 0.0
         local z = coords.z or coords[3] or 0.0
-
-        -- invisible / almost silent push-only explosion under target
-        pcall(AddExplosion, x, y, z - 1.2, 70, 0.0, false, true, 0.0, false)
-        Wait(0)
-        pcall(AddExplosion, x, y, z - 1.6, 70, 0.0, false, true, 0.0, false)
-    end
-
-    if SetEntityVelocity then
-        pcall(SetEntityVelocity, ped, 0.0, 0.0, 55.0)
+        AddExplosion(x, y, z - 1.0, 4, 5.0, true, false, 1.0)
     end
 end
+
 function Menu.HEXAllPlayers()
     if not GetActivePlayers then return end
     local playerList = GetActivePlayers()
@@ -5223,6 +5264,13 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.LaunchPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Launch Player V2",
+                    type = "action",
+                    onClick = function()
+                        Menu.LaunchPlayerV2(selectedPlayer)
                     end
                 },
                 {
