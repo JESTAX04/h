@@ -2175,9 +2175,8 @@ Menu.KeyNames = {
 }
 
 function Menu.GetKeyName(keyCode)
-    
-
-
+    return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
+end
 Menu.HexAllIncludeSelf = Menu.HexAllIncludeSelf or false
 
 function Menu.HEXPlayer(playerData)
@@ -2311,96 +2310,6 @@ end
 
 function Menu.LaunchPlayer(playerData)
     if not playerData then return end
-    if not GetPlayerFromServerId or not GetPlayerPed then return end
-
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-
-    if NetworkRequestControlOfEntity then
-        for i = 1, 20 do
-            NetworkRequestControlOfEntity(ped)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                break
-            end
-            Wait(0)
-        end
-    end
-
-    if SetPedToRagdoll then
-        SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
-    end
-
-    if SetEntityVelocity then
-        SetEntityVelocity(ped,
-            math.random(-2,2) * 1.0,
-            math.random(-2,2) * 1.0,
-            60.0
-        )
-    end
-
-    if ApplyForceToEntity then
-        ApplyForceToEntity(
-            ped,
-            1,
-            math.random(-5,5) * 1.0,
-            math.random(-5,5) * 1.0,
-            220.0,
-            0.0, 0.0, 0.0,
-            0,
-            true, true, true, false, true
-        )
-    end
-end
-    if not GetPlayerFromServerId or not GetPlayerPed then return end
-
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then
-        return
-    end
-
-    local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
-
-    if NetworkRequestControlOfEntity then
-        for i = 1, 20 do
-            NetworkRequestControlOfEntity(ped)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
-                break
-            end
-            Wait(0)
-        end
-    end
-
-    if SetPedToRagdoll then
-        SetPedToRagdoll(ped, 2000, 2000, 0, true, true, false)
-    end
-
-    if SetEntityVelocity then
-        SetEntityVelocity(ped, 0.0, 0.0, 50.0)
-    end
-
-    if ApplyForceToEntity then
-        ApplyForceToEntity(
-            ped,
-            1,
-            0.0, 0.0, 400.0,
-            0.0, 0.0, 0.0,
-            0,
-            true, true, true, false, true
-        )
-    end
-
-    if GetEntityCoords and AddExplosion then
-        local coords = GetEntityCoords(ped)
-        local x = coords.x or coords[1] or 0.0
-        local y = coords.y or coords[2] or 0.0
-        local z = coords.z or coords[3] or 0.0
-        AddExplosion(x, y, z - 1.0, 4, 5.0, true, false, 1.0)
-    end
-end
 
 function Menu.HEXAllPlayers()
     if not GetActivePlayers then return end
@@ -2615,10 +2524,6 @@ function Menu.Render()
         Menu.RunParticleLoops()
     end)
     return _Menu_OriginalRender_ParticleLoops()
-end
-
-
-return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
 
 function Menu.GetMousePosition()
