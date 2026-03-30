@@ -5337,6 +5337,49 @@ function Menu.RampAllVehicles()
     end
 end
 
+
+function Menu.MagnetCars()
+    if not EnumerateVehicles then return end
+    if not PlayerPedId or not GetEntityCoords or not SetEntityCoords then return end
+
+    local myPed = PlayerPedId()
+    local myCoords = GetEntityCoords(myPed)
+    local px = myCoords.x or myCoords[1] or 0.0
+    local py = myCoords.y or myCoords[2] or 0.0
+    local pz = myCoords.z or myCoords[3] or 0.0
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist and DoesEntityExist(vehicle) then
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+            local newX = px + math.random(-2, 2)
+            local newY = py + math.random(-2, 2)
+            local newZ = pz
+            SetEntityCoords(vehicle, newX, newY, newZ, false, false, false, false)
+        end
+    end
+end
+
+function Menu.FlipAllVehicles()
+    if not EnumerateVehicles then return end
+    if not GetEntityRotation or not SetEntityRotation then return end
+
+    for vehicle in EnumerateVehicles() do
+        if DoesEntityExist and DoesEntityExist(vehicle) then
+            if NetworkRequestControlOfEntity then
+                NetworkRequestControlOfEntity(vehicle)
+            end
+            local rot = GetEntityRotation(vehicle, 2)
+            local rx = (rot.x or rot[1] or 0.0) + 180.0
+            local ry = (rot.y or rot[2] or 0.0)
+            local rz = (rot.z or rot[3] or 0.0)
+            SetEntityRotation(vehicle, rx, ry, rz, 2, true)
+        end
+    end
+end
+
+
 function Menu.FIBAllVehicles()
     if not EnumerateVehicles or not CreateObject or not DoesEntityExist then return end
 
