@@ -5850,276 +5850,158 @@ Menu.ApplyStreamProofState(Menu.StreamProof)
 
 
 -- ============================================
--- South-style UI clone layer (LITE / stable)
--- centered red/black layout + light animation + icons
+-- Full UI panel layer
 -- ============================================
-Menu.SouthLite = Menu.SouthLite or {
-    enabled = true,
-    slide = 0.0,
-    target = 0.0
-}
+Menu.Position.width = math.max(Menu.Position.width or 470, 500)
+Menu.Position.headerHeight = 96
+Menu.Position.itemHeight = math.max(Menu.Position.itemHeight or 40, 40)
+Menu.Position.mainMenuHeight = math.max(Menu.Position.mainMenuHeight or 34, 36)
+Menu.Position.footerHeight = math.max(Menu.Position.footerHeight or 32, 34)
+Menu.Position.headerRadius = 16
+Menu.Position.itemRadius = 12
+Menu.Position.footerRadius = 12
+Menu.Banner.height = 96
+Menu.FullPanelUI = Menu.FullPanelUI or { sidebarWidth = 112 }
 
-Menu.Position.x = 520
-Menu.Position.y = 110
-Menu.Position.width = 390
-Menu.Position.itemHeight = 42
-Menu.Position.mainMenuHeight = 34
-Menu.Position.headerHeight = 118
-Menu.Position.footerHeight = 28
-Menu.Position.mainMenuSpacing = 0
-Menu.Position.footerSpacing = 0
-Menu.Position.headerRadius = 0
-Menu.Position.itemRadius = 0
-Menu.Banner.height = 118
-Menu.ItemsPerPage = 8
-Menu.ApplyTheme("Red")
-
-function Menu.SouthGetIcon(itemName)
-    local name = string.lower(tostring(itemName or ""))
-    if string.find(name, "self", 1, true) then return "S" end
-    if string.find(name, "online", 1, true) then return "O" end
-    if string.find(name, "vehicle", 1, true) or string.find(name, "cars", 1, true) then return "V" end
-    if string.find(name, "visual", 1, true) or string.find(name, "screen", 1, true) then return "E" end
-    if string.find(name, "weapon", 1, true) then return "W" end
-    if string.find(name, "misc", 1, true) then return "M" end
-    if string.find(name, "exploit", 1, true) or string.find(name, "troll", 1, true) then return "X" end
-    if string.find(name, "setting", 1, true) then return "G" end
-    if string.find(name, "search", 1, true) then return "?" end
-    if string.find(name, "launch", 1, true) then return "L" end
-    if string.find(name, "npc", 1, true) or string.find(name, "clone", 1, true) then return "N" end
-    if string.find(name, "particle", 1, true) then return "P" end
-    if string.find(name, "freeze", 1, true) then return "F" end
-    if string.find(name, "cage", 1, true) then return "C" end
-    if string.find(name, "hex", 1, true) then return "H" end
-    return ">"
-end
-
-local _Menu_OriginalGetScaledPosition_SouthLite = Menu.GetScaledPosition
-function Menu.GetScaledPosition()
-    local pos = _Menu_OriginalGetScaledPosition_SouthLite()
-    local scale = Menu.Scale or 1.0
-    pos.x = Menu.Position.x + ((1.0 - (Menu.SouthLite and Menu.SouthLite.slide or 1.0)) * -60)
-    pos.y = Menu.Position.y
-    pos.width = (Menu.Position.width or 390) * scale
-    pos.itemHeight = (Menu.Position.itemHeight or 42) * scale
-    pos.mainMenuHeight = (Menu.Position.mainMenuHeight or 34) * scale
-    pos.headerHeight = (Menu.Position.headerHeight or 118) * scale
-    pos.footerHeight = (Menu.Position.footerHeight or 28) * scale
-    pos.mainMenuSpacing = 0
-    pos.footerSpacing = 0
-    pos.headerRadius = 0
-    pos.itemRadius = 0
-    return pos
-end
-
-local _Menu_OriginalDrawBackground_SouthLite = Menu.DrawBackground
+local _Menu_OriginalDrawBackground_FullPanel = Menu.DrawBackground
 function Menu.DrawBackground()
+    local palette = Menu.GetThemePalette()
     local bounds = Menu.GetMenuBounds()
-    local anim = Menu.SouthLite and Menu.SouthLite.slide or 1.0
-    Menu.DrawRoundedPanel(0, 0, 1920, 1080, { r = 0, g = 0, b = 0 }, 0.32 * anim, 0)
-
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.FullPanelUI.sidebarWidth or 112) * scale
     local x = bounds.x
     local y = bounds.y
     local w = bounds.width
     local h = bounds.totalHeight
-    local accent = { r = 214, g = 19, b = 19 }
 
-    Menu.DrawSoftShadow(x + 3, y + 4, w, h, 8, 0.18 * anim, 8)
-    Menu.DrawFramedPanel(x, y, w, h, { r = 8, g = 8, b = 10 }, 0.98, { r = 56, g = 10, b = 10 }, 0.24, 0, 1)
+    Menu.DrawRoundedPanel(0, 0, 4000, 4000, { r = 0, g = 0, b = 0 }, 0.14, 0)
+    Menu.DrawSoftShadow(x + (8 * scale), y + (10 * scale), w - (12 * scale), h - (6 * scale), 18 * scale, 0.30, 12)
+    Menu.DrawFramedPanel(x, y, w, h, palette.panel, 0.97, palette.border, 0.62, 16 * scale, 1)
 
-    for i = 0, 50 do
-        local rowY = y + (i * (bounds.bannerHeight / 50))
-        local mix = i / 50
-        local r = math.floor(12 + (100 * (1.0 - mix)))
-        local g = math.floor(3 + (8 * (1.0 - mix)))
-        local b = math.floor(5 + (8 * (1.0 - mix)))
-        Menu.DrawRoundedPanel(x + 1, rowY, w - 2, (bounds.bannerHeight / 50) + 1, { r = r, g = g, b = b }, 0.92, 0)
-    end
+    Menu.DrawFramedPanel(x + (8 * scale), y + (8 * scale), sidebarW, h - (16 * scale), palette.panel3, 0.92, palette.borderDim, 0.22, 14 * scale, 1)
+    Menu.DrawRoundedPanel(x + (8 * scale), y + (8 * scale), sidebarW, 48 * scale, palette.accent, 0.10, 14 * scale)
+    Menu.DrawRoundedPanel(x + sidebarW + (16 * scale), y + (8 * scale), w - sidebarW - (24 * scale), h - (16 * scale), { r = 255, g = 255, b = 255 }, 0.02, 14 * scale)
 
-    if Menu.Banner.enabled and Menu.bannerTexture and Menu.bannerTexture > 0 and Susano and Susano.DrawImage then
-        Susano.DrawImage(Menu.bannerTexture, x + 1, y + 1, w - 2, bounds.bannerHeight - 2, 1, 1, 1, 0.84, 0)
-    end
+    Menu.DrawRoundedPanel(x + sidebarW + (16 * scale), bounds.barY + (4 * scale), w - sidebarW - (24 * scale), bounds.barHeight - (8 * scale), palette.panel3, 0.64, 10 * scale)
+    Menu.DrawRoundedPanel(x + sidebarW + (16 * scale), bounds.footerY + (4 * scale), w - sidebarW - (24 * scale), bounds.footerHeight - (8 * scale), palette.panel3, 0.58, 10 * scale)
 
-    Menu.DrawRoundedPanel(x + 1, y + 1, w - 2, bounds.bannerHeight - 2, { r = 0, g = 0, b = 0 }, 0.32, 0)
-    Menu.DrawRoundedPanel(x + 1, y + bounds.bannerHeight - 3, w - 2, 3, accent, 0.95, 0)
-    Menu.DrawRoundedPanel(x + 1, bounds.barY, w - 2, bounds.barHeight, { r = 26, g = 26, b = 30 }, 0.98, 0)
-
-    local itemH = Menu.GetScaledPosition().itemHeight
-    local visibleItems = math.floor(bounds.itemsHeight / math.max(1, itemH))
-    for i = 1, math.max(1, visibleItems) do
-        local itemY = bounds.itemsY + ((i - 1) * itemH)
-        Menu.DrawRoundedPanel(x + 1, itemY, w - 2, itemH, { r = 7, g = 7, b = 8 }, 0.98, 0)
-    end
-
-    Menu.DrawRoundedPanel(x + 1, bounds.footerY, w - 2, bounds.footerHeight, { r = 28, g = 28, b = 30 }, 0.98, 0)
+    Menu.DrawText(x + (24 * scale), y + (18 * scale), "J", 24, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
+    Menu.DrawText(x + (22 * scale), y + (46 * scale), "panel", 10, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.90)
 end
 
-local _Menu_OriginalDrawHeader_SouthLite = Menu.DrawHeader
+local _Menu_OriginalDrawHeader_FullPanel = Menu.DrawHeader
 function Menu.DrawHeader()
+    local palette = Menu.GetThemePalette()
     local bounds = Menu.GetMenuBounds()
-    local x = bounds.x
-    local y = bounds.y
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.FullPanelUI.sidebarWidth or 112) * scale
+    local x = bounds.x + sidebarW + (16 * scale)
+    local y = bounds.y + (10 * scale)
+    local w = bounds.width - sidebarW - (24 * scale)
+    local h = bounds.bannerHeight - (18 * scale)
 
-    Menu.DrawText(x + 18, y + 12, "JESTA MENU", 18, 1.0, 1.0, 1.0, 0.98)
-    Menu.DrawText(x + 18, y + 34, "South style clone", 10, 0.92, 0.92, 0.92, 0.92)
-end
+    Menu.DrawFramedPanel(x, y, w, h, palette.panel2, 0.96, palette.borderDim, 0.18, 14 * scale, 1)
+    Menu.DrawRoundedPanel(x + 1, y + 1, w - 2, h - 2, palette.accent, 0.05, 13 * scale)
+    Menu.DrawRoundedPanel(x + 1, y + h - (3 * scale), w - 2, 3 * scale, palette.accent, 0.68, 2 * scale)
 
-local _Menu_OriginalDrawTabs_SouthLite = Menu.DrawTabs
-function Menu.DrawTabs(category, x, startY, width, tabHeight)
-    local label = "Main"
-    if category and category.tabs and category.tabs[Menu.CurrentTab] and category.tabs[Menu.CurrentTab].name then
-        label = tostring(category.tabs[Menu.CurrentTab].name)
+    local title = (Menu.GetHeaderTitle and Menu.GetHeaderTitle()) or "JESTA"
+    local subtitle = (Menu.GetHeaderSubtitle and Menu.GetHeaderSubtitle()) or "Full Panel UI"
+    Menu.DrawText(x + (18 * scale), y + (14 * scale), title, 24, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 1.0)
+    Menu.DrawText(x + (18 * scale), y + (41 * scale), subtitle, 12, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.95)
+
+    if Menu.DrawPill then
+        Menu.DrawPill(x + w - (182 * scale), y + (12 * scale), "FULL PANEL", 10, palette.panel3, palette.borderDim, palette.text, palette.accent)
+        Menu.DrawPill(x + w - (84 * scale), y + (12 * scale), "UI", 10, palette.panel3, palette.borderDim, palette.text, palette.soft)
     end
-
-    local tw = Menu.GetTextWidth(label, 15)
-    Menu.DrawText(x + (width / 2) - (tw / 2), startY + (tabHeight / 2) - 8, label, 15, 1.0, 1.0, 1.0, 0.98)
 end
 
-local _Menu_OriginalDrawFooter_SouthLite = Menu.DrawFooter
-function Menu.DrawFooter()
-    local bounds = Menu.GetMenuBounds()
-    local footerLeft = "discord.gg/jestamenu"
-    local footerRight = "Southv2"
+local _Menu_OriginalDrawTabs_FullPanel = Menu.DrawTabs
+function Menu.DrawTabs(category, x, startY, width, tabHeight)
+    if not category or not category.tabs then return end
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    local sidebarW = (Menu.FullPanelUI.sidebarWidth or 112) * scale
+    local cx = x + sidebarW + (24 * scale)
+    local cw = width - sidebarW - (38 * scale)
+    local count = #category.tabs
+    if count <= 0 then return end
+    local gap = 8 * scale
+    local tabW = (cw - (gap * (count - 1))) / count
 
-    Menu.DrawText(bounds.x + 12, bounds.footerY + (bounds.footerHeight / 2) - 6, footerLeft, 11, 0.86, 0.86, 0.86, 0.96)
-    local rw = Menu.GetTextWidth(footerRight, 11)
-    Menu.DrawText(bounds.x + bounds.width - rw - 12, bounds.footerY + (bounds.footerHeight / 2) - 6, footerRight, 11, 0.96, 0.96, 0.96, 0.96)
+    for i, tab in ipairs(category.tabs) do
+        local tx = cx + ((i - 1) * (tabW + gap))
+        local ty = startY + (6 * scale)
+        local selected = (i == Menu.CurrentTab)
+        Menu.DrawFramedPanel(tx, ty, tabW, tabHeight - (12 * scale), selected and palette.panel4 or palette.panel3, selected and 0.96 or 0.78, selected and palette.accent or palette.borderDim, selected and 0.86 or 0.16, 10 * scale, 1)
+        local tw = Menu.GetTextWidth(tab.name or "", 12)
+        local tc = selected and palette.text or palette.muted
+        Menu.DrawText(tx + (tabW / 2) - (tw / 2), ty + ((tabHeight - (12 * scale)) / 2) - (6 * scale), tab.name or "", 12, tc.r / 255.0, tc.g / 255.0, tc.b / 255.0, 0.98)
+    end
 end
 
-local _Menu_OriginalDrawItem_SouthLite = Menu.DrawItem
+local _Menu_OriginalDrawItem_FullPanel = Menu.DrawItem
 function Menu.DrawItem(x, itemY, width, itemHeight, item, isSelected)
+    local scale = Menu.Scale or 1.0
+    local palette = Menu.GetThemePalette()
+    local sidebarW = (Menu.FullPanelUI.sidebarWidth or 112) * scale
+
     if item and item.isSeparator then
+        local cx = x + sidebarW + (26 * scale)
+        local cw = width - sidebarW - (40 * scale)
         local label = tostring(item.separatorText or "")
         local tw = Menu.GetTextWidth(label, 11)
-        Menu.DrawText(x + (width / 2) - (tw / 2), itemY + (itemHeight / 2) - 6, label, 11, 0.72, 0.72, 0.72, 0.96)
+        local chipW = tw + (28 * scale)
+        local chipX = cx + (cw / 2) - (chipW / 2)
+        local lineY = itemY + (itemHeight / 2)
+        Menu.DrawRoundedPanel(cx, lineY, math.max(0, chipX - cx - (8 * scale)), 1, palette.borderDim, 0.42, 1)
+        Menu.DrawRoundedPanel(chipX + chipW + (8 * scale), lineY, math.max(0, (cx + cw) - (chipX + chipW + (8 * scale))), 1, palette.borderDim, 0.42, 1)
+        Menu.DrawFramedPanel(chipX, itemY + (itemHeight / 2) - (10 * scale), chipW, 20 * scale, palette.panel3, 0.92, palette.borderDim, 0.18, 10 * scale, 1)
+        Menu.DrawText(chipX + (14 * scale), itemY + (itemHeight / 2) - (6 * scale), label, 11, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.96)
         return
     end
 
-    local hover = false
-    local mx, my = Menu.GetMousePosition()
-    if mx and my then
-        hover = mx >= x and mx <= (x + width) and my >= itemY and my <= (itemY + itemHeight)
+    local px = x + sidebarW + (20 * scale)
+    local py = itemY + (2 * scale)
+    local pw = width - sidebarW - (30 * scale)
+    local ph = itemHeight - (4 * scale)
+    Menu.DrawFramedPanel(px, py, pw, ph, isSelected and palette.panel4 or palette.panel3, isSelected and 0.96 or 0.82, isSelected and palette.accent or palette.borderDim, isSelected and 0.90 or 0.16, 11 * scale, 1)
+    if isSelected then
+        Menu.DrawRoundedPanel(px + 1, py + 1, 4 * scale, ph - 2, palette.accent, 1.0, 3 * scale)
     end
 
-    local fill = isSelected and { r = 210, g = 16, b = 16 } or { r = 7, g = 7, b = 8 }
-    local alpha = isSelected and 0.98 or (hover and 0.94 or 0.98)
-    Menu.DrawRoundedPanel(x + 1, itemY, width - 2, itemHeight, fill, alpha, 0)
-
-    local icon = Menu.SouthGetIcon(item and item.name or "")
-    Menu.DrawRoundedPanel(x + 12, itemY + (itemHeight / 2) - 12, 24, 24, { r = 255, g = 255, b = 255 }, isSelected and 0.10 or 0.06, 3)
-    Menu.DrawText(x + 19, itemY + (itemHeight / 2) - 7, icon, 12, 0.98, 0.98, 0.98, 0.98)
-    Menu.DrawText(x + 44, itemY + (itemHeight / 2) - 8, tostring(item and item.name or "Item"), 14, 0.96, 0.96, 0.96, 0.98)
+    local label = tostring(item and item.name or "Item")
+    local tw = Menu.GetTextWidth(label, 12)
+    Menu.DrawText(px + (18 * scale), py + (ph / 2) - (6 * scale), label, 12, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.98)
 
     if item and (item.type == "toggle" or item.type == "toggle_selector") then
-        local stateText = item.value and "ON" or "OFF"
-        local sw = Menu.GetTextWidth(stateText, 11)
-        Menu.DrawText(x + width - sw - 14, itemY + (itemHeight / 2) - 6, stateText, 11, 0.95, 0.95, 0.95, 0.98)
+        Menu.DrawToggleSwitch(px + pw - (54 * scale), py + (ph / 2) - (10 * scale), item.value == true)
     elseif item and item.type == "selector" and item.options then
         local selectedIndex = item.selected or 1
         local selectedText = tostring(item.options[selectedIndex] or "")
         local sw = Menu.GetTextWidth(selectedText, 11)
-        Menu.DrawText(x + width - sw - 14, itemY + (itemHeight / 2) - 6, selectedText, 11, 0.95, 0.95, 0.95, 0.98)
-    else
-        local arrow = ">>"
-        local aw = Menu.GetTextWidth(arrow, 14)
-        Menu.DrawText(x + width - aw - 14, itemY + (itemHeight / 2) - 8, arrow, 14, 0.96, 0.96, 0.96, 0.98)
+        Menu.DrawText(px + pw - sw - (18 * scale), py + (ph / 2) - (6 * scale), selectedText, 11, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.96)
     end
 end
 
-function Menu.SouthHandleMouseLite()
-    if not Menu.Visible then return end
-    local mx, my = Menu.GetMousePosition()
+local _Menu_OriginalDrawFooter_FullPanel = Menu.DrawFooter
+function Menu.DrawFooter()
+    local palette = Menu.GetThemePalette()
     local bounds = Menu.GetMenuBounds()
-    local lmbPressed = Menu.IsKeyJustPressed(0x01)
-    local lmbDown = false
-    if Susano and Susano.GetAsyncKeyState then
-        local d, p = Susano.GetAsyncKeyState(0x01)
-        lmbDown = d == true
-    end
+    local scale = Menu.Scale or 1.0
+    local sidebarW = (Menu.FullPanelUI.sidebarWidth or 112) * scale
+    local x = bounds.x + sidebarW + (16 * scale)
+    local w = bounds.width - sidebarW - (24 * scale)
+    local y = bounds.footerY
 
-    if lmbPressed and mx >= bounds.x and mx <= (bounds.x + bounds.width) and my >= bounds.y and my <= (bounds.y + bounds.bannerHeight) then
-        Menu.SouthUI.dragging = true
-        Menu.SouthUI.dragOffsetX = mx - Menu.Position.x
-        Menu.SouthUI.dragOffsetY = my - Menu.Position.y
-    end
+    Menu.DrawFramedPanel(x, y, w, bounds.footerHeight, palette.panel3, 0.84, palette.borderDim, 0.16, 10 * scale, 1)
+    Menu.DrawText(x + (14 * scale), y + (bounds.footerHeight / 2) - (7 * scale), "JESTA MENU", 11, palette.text.r / 255.0, palette.text.g / 255.0, palette.text.b / 255.0, 0.96)
+    Menu.DrawText(x + (14 * scale), y + (bounds.footerHeight / 2) + (4 * scale), "full ui panel", 9, palette.muted.r / 255.0, palette.muted.g / 255.0, palette.muted.b / 255.0, 0.88)
 
-    if not lmbDown then
-        Menu.SouthUI.dragging = false
+    if Menu.StreamProof then
+        local modeText = tostring(Menu.StreamProofBackend or "none")
+        local mw = Menu.GetTextWidth(modeText, 9)
+        Menu.DrawText(x + w - mw - (14 * scale), y + (bounds.footerHeight / 2) - (5 * scale), modeText, 9, palette.soft.r / 255.0, palette.soft.g / 255.0, palette.soft.b / 255.0, 0.92)
     end
-
-    if Menu.SouthUI.dragging then
-        local screenWidth = 1920
-        local screenHeight = 1080
-        if Susano and Susano.GetScreenWidth and Susano.GetScreenHeight then
-            screenWidth = Susano.GetScreenWidth()
-            screenHeight = Susano.GetScreenHeight()
-        end
-        Menu.Position.x = math.max(0, math.min(screenWidth - bounds.width, mx - Menu.SouthUI.dragOffsetX))
-        Menu.Position.y = math.max(0, math.min(screenHeight - bounds.totalHeight, my - Menu.SouthUI.dragOffsetY))
-        return
-    end
-
-    if Menu.OpenedCategory then
-        local category = Menu.Categories and Menu.Categories[Menu.OpenedCategory] or nil
-        local items = category and category.tabs and category.tabs[Menu.CurrentTab] and category.tabs[Menu.CurrentTab].items or nil
-        if items then
-            for i = 1, math.min(Menu.ItemsPerPage, #items) do
-                local itemIndex = i + (Menu.ItemScrollOffset or 0)
-                local item = items[itemIndex]
-                if item then
-                    local itemY = bounds.itemsY + ((i - 1) * Menu.GetScaledPosition().itemHeight)
-                    if mx >= bounds.x and mx <= (bounds.x + bounds.width) and my >= itemY and my <= (itemY + Menu.GetScaledPosition().itemHeight) then
-                        Menu.CurrentItem = itemIndex
-                        if lmbPressed and not item.isSeparator then
-                            if item.type == "toggle" or item.type == "toggle_selector" then
-                                item.value = not item.value
-                                if item.onClick then item.onClick(item.value) end
-                            elseif item.type == "action" then
-                                if item.onClick then item.onClick() end
-                            elseif item.type == "selector" then
-                                if item.onClick then item.onClick(item.selected or 1, item.options and item.options[item.selected or 1] or nil) end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    else
-        local totalCategories = math.max(0, (Menu.Categories and #Menu.Categories or 0) - 1)
-        for i = 1, math.min(Menu.ItemsPerPage, totalCategories) do
-            local categoryIndex = i + (Menu.CategoryScrollOffset or 0) + 1
-            local category = Menu.Categories and Menu.Categories[categoryIndex] or nil
-            if category then
-                local itemY = bounds.itemsY + ((i - 1) * Menu.GetScaledPosition().itemHeight)
-                if mx >= bounds.x and mx <= (bounds.x + bounds.width) and my >= itemY and my <= (itemY + Menu.GetScaledPosition().itemHeight) then
-                    Menu.CurrentCategory = categoryIndex
-                    if lmbPressed and category.hasTabs then
-                        Menu.OpenedCategory = categoryIndex
-                        Menu.CurrentTab = 1
-                        Menu.CurrentItem = 1
-                        Menu.ItemScrollOffset = 0
-                    end
-                end
-            end
-        end
-    end
-end
-
-local _Menu_OriginalRender_SouthLite = Menu.Render
-function Menu.Render()
-    local dt = 0.016
-    if GetFrameTime then dt = GetFrameTime() end
-    Menu.SouthLite.target = Menu.Visible and 1.0 or 0.0
-    Menu.SouthLite.slide = Menu.SouthLite.slide + ((Menu.SouthLite.target - Menu.SouthLite.slide) * math.min(1.0, dt * 10.0))
-    if math.abs(Menu.SouthLite.slide - Menu.SouthLite.target) < 0.001 then
-        Menu.SouthLite.slide = Menu.SouthLite.target
-    end
-
-    local result = _Menu_OriginalRender_SouthLite()
-    if Menu.Visible then
-        pcall(Menu.SouthHandleMouseLite)
-    end
-    return result
 end
 
 return Menu
