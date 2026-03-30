@@ -2175,8 +2175,9 @@ Menu.KeyNames = {
 }
 
 function Menu.GetKeyName(keyCode)
-    return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
-end
+    
+
+
 Menu.HexAllIncludeSelf = Menu.HexAllIncludeSelf or false
 
 function Menu.HEXPlayer(playerData)
@@ -2248,64 +2249,140 @@ end
 
 
 
-function Menu.TeleportLaunchPlayer(playerData)
+function Menu.LaunchPlayerV2(playerData)
     if not playerData then return end
-    if not GetPlayerFromServerId or not GetPlayerPed or not PlayerPedId or not GetEntityCoords then return end
+    if not GetPlayerFromServerId or not GetPlayerPed or not PlayerPedId then return end
 
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then
-        print("Teleport+Launch failed: player not found")
-        return
+    local targetServerId = tonumber(playerData.id)
+    if not targetServerId then return end
+
+    local function GetPlayersInRadius(targetCoords, radius)
+        local playersInRadius = {}
+        if not targetCoords or not GetPlayerFromServerId or not GetPlayerPed or not DoesEntityExist or not GetEntityCoords then
+            return playersInRadius
+        end
+
+        for i = 0, 255 do
+            local player = GetPlayerFromServerId(i)
+            if player and player ~= -1 then
+                local ped = GetPlayerPed(player)
+                if ped and ped ~= 0 and DoesEntityExist(ped) then
+                    local coords = GetEntityCoords(ped)
+                    if coords then
+                        local dx = (targetCoords.x or targetCoords[1] or 0.0) - (coords.x or coords[1] or 0.0)
+                        local dy = (targetCoords.y or targetCoords[2] or 0.0) - (coords.y or coords[2] or 0.0)
+                        local dz = (targetCoords.z or targetCoords[3] or 0.0) - (coords.z or coords[3] or 0.0)
+                        local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+                        if distance <= radius then
+                            table.insert(playersInRadius, { player = player, serverId = i })
+                        end
+                    end
+                end
+            end
+        end
+        return playersInRadius
     end
 
-    local targetPed = GetPlayerPed(target)
-    local myPed = PlayerPedId()
-    if not targetPed or targetPed == 0 or not myPed or myPed == 0 then return end
+    CreateThread(function()
+        local clientId = GetPlayerFromServerId(targetServerId)
+        if not clientId or clientId == -1 then
+            return
+        end
 
-    local myCoords = GetEntityCoords(myPed)
-    local mx = myCoords.x or myCoords[1] or 0.0
-    local my = myCoords.y or myCoords[2] or 0.0
-    local mz = myCoords.z or myCoords[3] or 0.0
+        local targetPed = GetPlayerPed(clientId)
+        if not targetPed or targetPed == 0 or (DoesEntityExist and not DoesEntityExist(targetPed)) then
+            return
+        end
 
-    if NetworkRequestControlOfEntity then
-        for i = 1, 20 do
-            NetworkRequestControlOfEntity(targetPed)
-            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(targetPed) then
+        local myPed = PlayerPedId()
+        if not myPed or myPed == 0 then
+            return
+        end
+
+        local myCoords = GetEntityCoords and GetEntityCoords(myPed) or nil
+        local targetCoords = GetEntityCoords and GetEntityCoords(targetPed) or nil
+        if not myCoords or not targetCoords then
+            return
+        end
+
+        local mx = myCoords.x or myCoords[1] or 0.0
+        local my = myCoords.y or myCoords[2] or 0.0
+        local mz = myCoords.z or myCoords[3] or 0.0
+        local tx = targetCoords.x or targetCoords[1] or 0.0
+        local ty = targetCoords.y or targetCoords[2] or 0.0
+        local tz = targetCoords.z or targetCoords[3] or 0.0
+
+        local distance = math.sqrt((mx - tx)^2 + (my - ty)^2 + (mz - tz)^2)
+        local teleported = false
+        local originalCoords = nil
+        local radius = 3000.0
+
+        if distance > 10.0 and SetEntityCoordsNoOffset then
+            originalCoords = { x = mx, y = my, z = mz }
+            local angle = math.random() * 2 * math.pi
+            local radiusOffset = math.random(5, 9)
+            local xOffset = math.cos(angle) * radiusOffset
+            local yOffset = math.sin(angle) * radiusOffset
+            SetEntityCoordsNoOffset(myPed, tx + xOffset, ty + yOffset, tz, false, false, false)
+            if SetEntityVisible then
+                SetEntityVisible(myPed, false, 0)
+            end
+            teleported = true
+            Wait(100)
+        end
+
+        GetPlayersInRadius(targetCoords, radius)
+
+        if ClearPedTasksImmediately then
+            ClearPedTasksImmediately(myPed)
+        end
+
+        for i = 1, 15 do
+            if DoesEntityExist and not DoesEntityExist(targetPed) then
                 break
             end
-            Wait(0)
+
+            local curTargetCoords = GetEntityCoords and GetEntityCoords(targetPed) or nil
+            if not curTargetCoords then
+                break
+            end
+
+            local cx = curTargetCoords.x or curTargetCoords[1] or 0.0
+            local cy = curTargetCoords.y or curTargetCoords[2] or 0.0
+            local cz = curTargetCoords.z or curTargetCoords[3] or 0.0
+
+            if SetEntityCoords then
+                SetEntityCoords(myPed, cx, cy, cz + 0.5, false, false, false, false)
+            end
+            Wait(50)
+
+            if AttachEntityToEntityPhysically then
+                AttachEntityToEntityPhysically(myPed, targetPed, 0, 0, 0.0, 0.0, 150.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, false, false, 1, 2)
+            end
+            Wait(50)
+
+            if DetachEntity then
+                DetachEntity(myPed, true, true)
+            end
+            Wait(100)
         end
-    end
 
-    if SetEntityCoords then
-        SetEntityCoords(targetPed, mx + math.random(-2, 2), my + math.random(-2, 2), mz + 1.0, false, false, false, false)
-        Wait(50)
-    end
+        Wait(500)
 
-    if SetPedToRagdoll then
-        pcall(SetPedToRagdoll, targetPed, 2500, 2500, 0, true, true, false)
-    end
+        if ClearPedTasksImmediately then
+            ClearPedTasksImmediately(myPed)
+        end
 
-    if SetEntityVelocity then
-        SetEntityVelocity(targetPed, math.random(-4, 4) * 1.0, math.random(-4, 4) * 1.0, 55.0)
-    end
+        if originalCoords and SetEntityCoords then
+            SetEntityCoords(myPed, originalCoords.x, originalCoords.y, originalCoords.z + 1.0, false, false, false, false)
+            Wait(100)
+            SetEntityCoords(myPed, originalCoords.x, originalCoords.y, originalCoords.z, false, false, false, false)
+        end
 
-    if ApplyForceToEntity then
-        ApplyForceToEntity(
-            targetPed,
-            1,
-            math.random(-10, 10) * 1.0,
-            math.random(-10, 10) * 1.0,
-            450.0,
-            0.0, 0.0, 0.0,
-            0,
-            true, true, true, false, true
-        )
-    end
-
-    if AddExplosion then
-        AddExplosion(mx, my, mz - 0.8, 4, 4.0, true, false, 1.0)
-    end
+        if teleported and SetEntityVisible then
+            SetEntityVisible(myPed, true, 0)
+        end
+    end)
 end
 
 function Menu.LaunchPlayer(playerData)
@@ -2313,7 +2390,9 @@ function Menu.LaunchPlayer(playerData)
     if not GetPlayerFromServerId or not GetPlayerPed then return end
 
     local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
+    if target == -1 then
+        return
+    end
 
     local ped = GetPlayerPed(target)
     if not ped or ped == 0 then return end
@@ -2333,25 +2412,26 @@ function Menu.LaunchPlayer(playerData)
     end
 
     if SetEntityVelocity then
-        SetEntityVelocity(
-            ped,
-            math.random(-2, 2) * 1.0,
-            math.random(-2, 2) * 1.0,
-            60.0
-        )
+        SetEntityVelocity(ped, 0.0, 0.0, 50.0)
     end
 
     if ApplyForceToEntity then
         ApplyForceToEntity(
             ped,
             1,
-            math.random(-5, 5) * 1.0,
-            math.random(-5, 5) * 1.0,
-            220.0,
+            0.0, 0.0, 400.0,
             0.0, 0.0, 0.0,
             0,
             true, true, true, false, true
         )
+    end
+
+    if GetEntityCoords and AddExplosion then
+        local coords = GetEntityCoords(ped)
+        local x = coords.x or coords[1] or 0.0
+        local y = coords.y or coords[2] or 0.0
+        local z = coords.z or coords[3] or 0.0
+        AddExplosion(x, y, z - 1.0, 4, 5.0, true, false, 1.0)
     end
 end
 
@@ -2568,6 +2648,10 @@ function Menu.Render()
         Menu.RunParticleLoops()
     end)
     return _Menu_OriginalRender_ParticleLoops()
+end
+
+
+return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
 end
 
 function Menu.GetMousePosition()
@@ -5275,10 +5359,10 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
-                    name = "Teleport + Launch Combo",
+                    name = "Launch Player V2",
                     type = "action",
                     onClick = function()
-                        Menu.TeleportLaunchPlayer(selectedPlayer)
+                        Menu.LaunchPlayerV2(selectedPlayer)
                     end
                 },
                 {
