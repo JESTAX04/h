@@ -2259,23 +2259,50 @@ function Menu.LaunchPlayer(playerData)
     end
 
     local ped = GetPlayerPed(target)
-    if not ped or ped == 0 then return end
+    if not ped or ped == 0 then
+        print("Launch failed: ped not found")
+        return
+    end
 
     if NetworkRequestControlOfEntity then
-        NetworkRequestControlOfEntity(ped)
+        for i = 1, 15 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
+    end
+
+    if SetPedToRagdoll then
+        pcall(SetPedToRagdoll, ped, 1200, 1200, 0, true, true, false)
+    end
+
+    if SetEntityVelocity then
+        local vx = math.random(-6, 6) * 1.0
+        local vy = math.random(-6, 6) * 1.0
+        SetEntityVelocity(ped, vx, vy, 28.0)
     end
 
     if ApplyForceToEntity then
         ApplyForceToEntity(
             ped,
             1,
-            math.random(-20, 20),
-            math.random(-20, 20),
-            120.0,
+            math.random(-12, 12) * 1.0,
+            math.random(-12, 12) * 1.0,
+            260.0,
             0.0, 0.0, 0.0,
             0,
             true, true, true, false, true
         )
+    end
+
+    if GetEntityCoords and AddExplosion then
+        local coords = GetEntityCoords(ped)
+        local x = coords.x or coords[1] or 0.0
+        local y = coords.y or coords[2] or 0.0
+        local z = coords.z or coords[3] or 0.0
+        pcall(AddExplosion, x, y, z - 0.8, 70, 0.0, false, false, 0.0, false)
     end
 end
 
