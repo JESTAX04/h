@@ -2249,141 +2249,152 @@ end
 
 
 
-function Menu.LaunchPlayerV2(playerData)
+function Menu.CloneNPCAttackPlayer(playerData)
     if not playerData then return end
-    if not GetPlayerFromServerId or not GetPlayerPed or not PlayerPedId then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
 
-    local targetServerId = tonumber(playerData.id)
-    if not targetServerId then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local targetPed = GetPlayerPed(target)
+    if not targetPed or targetPed == 0 then return end
+    if not ClonePed or not TaskCombatPed then return end
 
-    local function GetPlayersInRadius(targetCoords, radius)
-        local playersInRadius = {}
-        if not targetCoords or not GetPlayerFromServerId or not GetPlayerPed or not DoesEntityExist or not GetEntityCoords then
-            return playersInRadius
-        end
+    local coords = GetEntityCoords(targetPed)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
 
-        for i = 0, 255 do
-            local player = GetPlayerFromServerId(i)
-            if player and player ~= -1 then
-                local ped = GetPlayerPed(player)
-                if ped and ped ~= 0 and DoesEntityExist(ped) then
-                    local coords = GetEntityCoords(ped)
-                    if coords then
-                        local dx = (targetCoords.x or targetCoords[1] or 0.0) - (coords.x or coords[1] or 0.0)
-                        local dy = (targetCoords.y or targetCoords[2] or 0.0) - (coords.y or coords[2] or 0.0)
-                        local dz = (targetCoords.z or targetCoords[3] or 0.0) - (coords.z or coords[3] or 0.0)
-                        local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
-                        if distance <= radius then
-                            table.insert(playersInRadius, { player = player, serverId = i })
-                        end
-                    end
-                end
+    for i = 1, 3 do
+        local npc = ClonePed(targetPed, true, true, true)
+        if npc and npc ~= 0 then
+            if SetEntityCoords then
+                SetEntityCoords(npc, x + math.random(-3, 3), y + math.random(-3, 3), z, false, false, false, false)
             end
+            if SetPedAsEnemy then SetPedAsEnemy(npc, true) end
+            if SetPedAccuracy then SetPedAccuracy(npc, 75) end
+            if SetPedCombatAttributes then
+                SetPedCombatAttributes(npc, 46, true)
+                SetPedCombatAttributes(npc, 5, true)
+            end
+            if SetPedCombatRange then SetPedCombatRange(npc, 2) end
+            if SetPedCombatMovement then SetPedCombatMovement(npc, 2) end
+            TaskCombatPed(npc, targetPed, 0, 16)
         end
-        return playersInRadius
+    end
+end
+
+function Menu.FreezePlayer(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if NetworkRequestControlOfEntity then
+        for i = 1, 15 do
+            NetworkRequestControlOfEntity(ped)
+            if NetworkHasControlOfEntity and NetworkHasControlOfEntity(ped) then
+                break
+            end
+            Wait(0)
+        end
     end
 
-    CreateThread(function()
-        local clientId = GetPlayerFromServerId(targetServerId)
-        if not clientId or clientId == -1 then
-            return
-        end
-
-        local targetPed = GetPlayerPed(clientId)
-        if not targetPed or targetPed == 0 or (DoesEntityExist and not DoesEntityExist(targetPed)) then
-            return
-        end
-
-        local myPed = PlayerPedId()
-        if not myPed or myPed == 0 then
-            return
-        end
-
-        local myCoords = GetEntityCoords and GetEntityCoords(myPed) or nil
-        local targetCoords = GetEntityCoords and GetEntityCoords(targetPed) or nil
-        if not myCoords or not targetCoords then
-            return
-        end
-
-        local mx = myCoords.x or myCoords[1] or 0.0
-        local my = myCoords.y or myCoords[2] or 0.0
-        local mz = myCoords.z or myCoords[3] or 0.0
-        local tx = targetCoords.x or targetCoords[1] or 0.0
-        local ty = targetCoords.y or targetCoords[2] or 0.0
-        local tz = targetCoords.z or targetCoords[3] or 0.0
-
-        local distance = math.sqrt((mx - tx)^2 + (my - ty)^2 + (mz - tz)^2)
-        local teleported = false
-        local originalCoords = nil
-        local radius = 3000.0
-
-        if distance > 10.0 and SetEntityCoordsNoOffset then
-            originalCoords = { x = mx, y = my, z = mz }
-            local angle = math.random() * 2 * math.pi
-            local radiusOffset = math.random(5, 9)
-            local xOffset = math.cos(angle) * radiusOffset
-            local yOffset = math.sin(angle) * radiusOffset
-            SetEntityCoordsNoOffset(myPed, tx + xOffset, ty + yOffset, tz, false, false, false)
-            if SetEntityVisible then
-                SetEntityVisible(myPed, false, 0)
-            end
-            teleported = true
-            Wait(100)
-        end
-
-        GetPlayersInRadius(targetCoords, radius)
-
-        if ClearPedTasksImmediately then
-            ClearPedTasksImmediately(myPed)
-        end
-
-        for i = 1, 15 do
-            if DoesEntityExist and not DoesEntityExist(targetPed) then
-                break
-            end
-
-            local curTargetCoords = GetEntityCoords and GetEntityCoords(targetPed) or nil
-            if not curTargetCoords then
-                break
-            end
-
-            local cx = curTargetCoords.x or curTargetCoords[1] or 0.0
-            local cy = curTargetCoords.y or curTargetCoords[2] or 0.0
-            local cz = curTargetCoords.z or curTargetCoords[3] or 0.0
-
-            if SetEntityCoords then
-                SetEntityCoords(myPed, cx, cy, cz + 0.5, false, false, false, false)
-            end
-            Wait(50)
-
-            if AttachEntityToEntityPhysically then
-                AttachEntityToEntityPhysically(myPed, targetPed, 0, 0, 0.0, 0.0, 150.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, false, false, 1, 2)
-            end
-            Wait(50)
-
-            if DetachEntity then
-                DetachEntity(myPed, true, true)
-            end
-            Wait(100)
-        end
-
-        Wait(500)
-
-        if ClearPedTasksImmediately then
-            ClearPedTasksImmediately(myPed)
-        end
-
-        if originalCoords and SetEntityCoords then
-            SetEntityCoords(myPed, originalCoords.x, originalCoords.y, originalCoords.z + 1.0, false, false, false, false)
-            Wait(100)
-            SetEntityCoords(myPed, originalCoords.x, originalCoords.y, originalCoords.z, false, false, false, false)
-        end
-
-        if teleported and SetEntityVisible then
-            SetEntityVisible(myPed, true, 0)
-        end
-    end)
+    if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+    if ClearPedTasksImmediately then ClearPedTasksImmediately(ped) end
 end
+
+function Menu.VehicleRainOnPlayer(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+    if not CreateVehicle or not GetEntityCoords then return end
+
+    local coords = GetEntityCoords(ped)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    local models = {
+        `adder`,
+        `zentorno`,
+        `sultanrs`,
+        `t20`
+    }
+
+    for i = 1, 5 do
+        local model = models[((i - 1) % #models) + 1]
+        if RequestModel and HasModelLoaded then
+            RequestModel(model)
+            local tries = 0
+            while not HasModelLoaded(model) and tries < 200 do
+                tries = tries + 1
+                Wait(0)
+            end
+        end
+
+        local spawnX = x + math.random(-4, 4)
+        local spawnY = y + math.random(-4, 4)
+        local spawnZ = z + 18 + (i * 3)
+
+        local veh = CreateVehicle(model, spawnX, spawnY, spawnZ, math.random(0, 360) * 1.0, true, true)
+        if veh and veh ~= 0 then
+            if SetEntityVelocity then
+                SetEntityVelocity(veh, 0.0, 0.0, -30.0)
+            end
+            if SetVehicleEngineOn then
+                SetVehicleEngineOn(veh, true, true, false)
+            end
+        end
+    end
+end
+
+function Menu.CagePlayer(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed or not GetEntityCoords then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    local coords = GetEntityCoords(ped)
+    local x = coords.x or coords[1] or 0.0
+    local y = coords.y or coords[2] or 0.0
+    local z = coords.z or coords[3] or 0.0
+
+    local cageModel = `prop_gold_cont_01`
+    if RequestModel and HasModelLoaded then
+        RequestModel(cageModel)
+        local tries = 0
+        while not HasModelLoaded(cageModel) and tries < 200 do
+            tries = tries + 1
+            Wait(0)
+        end
+    end
+
+    if CreateObject then
+        local cage = CreateObject(cageModel, x, y, z - 1.0, true, true, true)
+        if cage and cage ~= 0 then
+            if SetEntityRotation then
+                SetEntityRotation(cage, 0.0, 0.0, 0.0, 2, true)
+            end
+            if FreezeEntityPosition then
+                FreezeEntityPosition(cage, true)
+            end
+            if SetEntityAsMissionEntity then
+                SetEntityAsMissionEntity(cage, true, true)
+            end
+        end
+    end
+end
+
 
 function Menu.LaunchPlayer(playerData)
     if not playerData then return end
@@ -5359,10 +5370,31 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
-                    name = "Launch Player V2",
+                    name = "Clone NPC Attack",
                     type = "action",
                     onClick = function()
-                        Menu.LaunchPlayerV2(selectedPlayer)
+                        Menu.CloneNPCAttackPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Freeze Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.FreezePlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Vehicle Rain On Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.VehicleRainOnPlayer(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Cage Player",
+                    type = "action",
+                    onClick = function()
+                        Menu.CagePlayer(selectedPlayer)
                     end
                 },
                 {
