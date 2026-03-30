@@ -2334,10 +2334,9 @@ function Menu.LaunchPlayer(playerData)
     end
 
     if SetEntityVelocity then
-        SetEntityVelocity(
-            ped,
-            math.random(-2, 2) * 1.0,
-            math.random(-2, 2) * 1.0,
+        SetEntityVelocity(ped,
+            math.random(-2,2) * 1.0,
+            math.random(-2,2) * 1.0,
             60.0
         )
     end
@@ -2346,8 +2345,8 @@ function Menu.LaunchPlayer(playerData)
         ApplyForceToEntity(
             ped,
             1,
-            math.random(-5, 5) * 1.0,
-            math.random(-5, 5) * 1.0,
+            math.random(-5,5) * 1.0,
+            math.random(-5,5) * 1.0,
             220.0,
             0.0, 0.0, 0.0,
             0,
