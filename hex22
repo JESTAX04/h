@@ -2175,8 +2175,8 @@ Menu.KeyNames = {
 }
 
 function Menu.GetKeyName(keyCode)
-    
-
+    return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
+end
 
 Menu.HexAllIncludeSelf = Menu.HexAllIncludeSelf or false
 
@@ -2942,9 +2942,6 @@ function Menu.Render()
     return _Menu_OriginalRender_ParticleLoops()
 end
 
-
-return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
-end
 
 function Menu.GetMousePosition()
     if Susano and Susano.GetCursorPos then
@@ -5722,8 +5719,6 @@ function Menu.RefreshOnlinePlayers()
                         Menu.ScreenEffectsTroll(selectedPlayer)
                     end
                 },
-                {
-                    
                 {
                     name = "Infinite Jump Bug",
                     type = "action",
