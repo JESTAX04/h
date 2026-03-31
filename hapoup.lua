@@ -5182,7 +5182,7 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                 if tab and tostring(tab.name or "") == "Players" then
                     foundPlayers = true
                     tab.items = tab.items or {
- name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
@@ -5193,7 +5193,7 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                 table.insert(cat.tabs, {
                     name = "Players",
                     items = {
- name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
@@ -5208,10 +5208,10 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
         name = "Online",
         hasTabs = true,
         tabs = {
-
+            {
                 name = "Players",
                 items = {
- name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                    { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                     { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                     { isSeparator = true, separatorText = "ONLINE PLAYERS" },
                     { name = "Loading...", type = "action", onClick = function() end }
