@@ -2175,8 +2175,8 @@ Menu.KeyNames = {
 }
 
 function Menu.GetKeyName(keyCode)
-    return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
-end
+    
+
 
 Menu.HexAllIncludeSelf = Menu.HexAllIncludeSelf or false
 
@@ -2942,6 +2942,9 @@ function Menu.Render()
     return _Menu_OriginalRender_ParticleLoops()
 end
 
+
+return Menu.KeyNames[keyCode] or ("Key 0x" .. string.format("%02X", keyCode))
+end
 
 function Menu.GetMousePosition()
     if Susano and Susano.GetCursorPos then
@@ -5182,7 +5185,7 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                 if tab and tostring(tab.name or "") == "Players" then
                     foundPlayers = true
                     tab.items = tab.items or {
- name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
@@ -5193,7 +5196,7 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
                 table.insert(cat.tabs, {
                     name = "Players",
                     items = {
- name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                        { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                         { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                         { isSeparator = true, separatorText = "ONLINE PLAYERS" },
                         { name = "Loading...", type = "action", onClick = function() end }
@@ -5208,10 +5211,10 @@ function Menu.EnsureOnlineCategoryInList(categoryList)
         name = "Online",
         hasTabs = true,
         tabs = {
-
+            {
                 name = "Players",
                 items = {
- name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
+                    { name = "Search Players", type = "action", onClick = function() Menu.OpenPlayerSearch() end },
                     { name = "Clear Search", type = "action", onClick = function() Menu.PlayerList.searchQuery = "" Menu.ApplyPlayerSearch() Menu.RefreshOnlinePlayers() end },
                     { isSeparator = true, separatorText = "ONLINE PLAYERS" },
                     { name = "Loading...", type = "action", onClick = function() end }
@@ -5539,7 +5542,7 @@ function Menu.RefreshOnlinePlayers()
             end
 
             items = {
-
+                {
                     name = "Back To Player List",
                     type = "action",
                     onClick = function()
@@ -5669,7 +5672,8 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
-
+                    
+                {
                     name = "Explode Loop",
                     type = "action",
                     onClick = function()
@@ -5718,6 +5722,8 @@ function Menu.RefreshOnlinePlayers()
                         Menu.ScreenEffectsTroll(selectedPlayer)
                     end
                 },
+                {
+                    
                 {
                     name = "Infinite Jump Bug",
                     type = "action",
@@ -5775,7 +5781,7 @@ function Menu.RefreshOnlinePlayers()
         local shownPlayers = Menu.PlayerList.filteredPlayers or {}
 
         items = {
-
+            {
                 name = "Search Players",
                 type = "action",
                 onClick = function()
