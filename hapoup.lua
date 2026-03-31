@@ -2251,79 +2251,6 @@ end
 
 
 
-
-function Menu.InvisibleCage(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-    local coords = GetEntityCoords(ped)
-
-    local model = `prop_container_01a`
-    RequestModel(model)
-    while not HasModelLoaded(model) do Wait(10) end
-
-    local obj = CreateObject(model, coords.x, coords.y, coords.z - 1.0, true, true, true)
-    SetEntityVisible(obj, false)
-    FreezeEntityPosition(obj, true)
-end
-
-function Menu.SpinBug(playerData)
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    for i = 1, 30 do
-        SetEntityRotation(ped, math.random(0,360), math.random(0,360), math.random(0,360), 2, true)
-        Wait(50)
-    end
-end
-
-function Menu.DesyncBug(playerData)
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    CreateThread(function()
-        for i = 1, 15 do
-            local coords = GetEntityCoords(ped)
-            FreezeEntityPosition(ped, true)
-            SetEntityCoords(ped,
-                coords.x + math.random(-3,3),
-                coords.y + math.random(-3,3),
-                coords.z,
-                false,false,false,false)
-            Wait(200)
-        end
-        FreezeEntityPosition(ped, false)
-    end)
-end
-
-function Menu.VehicleBug(playerData)
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-    local coords = GetEntityCoords(ped)
-
-    local veh = CreateVehicle(`adder`, coords.x, coords.y, coords.z, 0.0, true, true)
-
-    AttachEntityToEntity(veh, ped, 0,
-        0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0,
-        true, true, false, true, 1, true)
-end
-
-function Menu.AnimationBug(playerData)
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    RequestAnimDict("move_m@drunk@verydrunk")
-    while not HasAnimDictLoaded("move_m@drunk@verydrunk") do Wait(10) end
-
-    TaskPlayAnim(ped, "move_m@drunk@verydrunk", "walk", 8.0, -8.0, -1, 49, 0, false,false,false)
-end
-
 function Menu.AdminTroll(playerData)
     if not playerData then return end
     if not Menu.OpenInput then return end
@@ -5716,43 +5643,6 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.ScreenEffectsTroll(selectedPlayer)
-                    end
-                },
-                {
-                    
-                {
-                    name = "Invisible Cage Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.InvisibleCage(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Spin Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.SpinBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Desync Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.DesyncBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Vehicle Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.VehicleBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Animation Bug",
-                    type = "action",
-                    onClick = function()
-                        Menu.AnimationBug(selectedPlayer)
                     end
                 },
                 {
