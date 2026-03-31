@@ -2334,6 +2334,84 @@ function Menu.ScreenEffectsTroll(playerData)
     end)
 end
 
+
+function Menu.InfiniteJumpBug(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+
+    CreateThread(function()
+        for i = 1, 40 do
+            ApplyForceToEntity(ped, 1, 0.0, 0.0, 120.0, 0.0,0.0,0.0, 0,true,true,true,false,true)
+            SetPedToRagdoll(ped, 500, 500, 0, true, true, false)
+            Wait(150)
+        end
+    end)
+end
+
+function Menu.FlyingCarBug(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+
+    if IsPedInAnyVehicle(ped, false) then
+        local veh = GetVehiclePedIsIn(ped, false)
+
+        CreateThread(function()
+            for i = 1, 30 do
+                ApplyForceToEntity(veh, 1,
+                    math.random(-50,50),
+                    math.random(-50,50),
+                    150.0,
+                    0,0,0,
+                    0,true,true,true,false,true)
+
+                SetEntityRotation(veh,
+                    math.random(0,360),
+                    math.random(0,360),
+                    math.random(0,360),
+                    2, true)
+
+                Wait(120)
+            end
+        end)
+    end
+end
+
+function Menu.AIControlBug(playerData)
+    if not playerData then return end
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+
+    CreateThread(function()
+        for i = 1, 20 do
+            local coords = GetEntityCoords(ped)
+
+            TaskGoStraightToCoord(
+                ped,
+                coords.x + math.random(-10,10),
+                coords.y + math.random(-10,10),
+                coords.z,
+                2.0,
+                -1,
+                math.random(0,360),
+                0.5
+            )
+
+            if math.random(1,2) == 1 then
+                TaskStartScenarioInPlace(ped, "WORLD_HUMAN_DRINKING", 0, true)
+            else
+                ClearPedTasks(ped)
+            end
+
+            Wait(1000)
+        end
+    end)
+end
+
 function Menu.CloneArmy(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
@@ -5643,6 +5721,29 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.ScreenEffectsTroll(selectedPlayer)
+                    end
+                },
+                {
+                    
+                {
+                    name = "Infinite Jump Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.InfiniteJumpBug(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Flying Car Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.FlyingCarBug(selectedPlayer)
+                    end
+                },
+                {
+                    name = "AI Control Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.AIControlBug(selectedPlayer)
                     end
                 },
                 {
