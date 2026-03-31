@@ -2848,7 +2848,7 @@ end
 function Menu.BuildParticleLoopItems(selectedPlayer)
     local p = Menu.ParticleLoops or {}
     return {
-
+        {
             name = "Back To Player Actions",
             type = "action",
             onClick = function()
