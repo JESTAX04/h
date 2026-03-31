@@ -5539,7 +5539,7 @@ function Menu.RefreshOnlinePlayers()
             end
 
             items = {
-
+                {
                     name = "Back To Player List",
                     type = "action",
                     onClick = function()
