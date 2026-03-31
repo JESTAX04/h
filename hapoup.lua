@@ -2251,6 +2251,152 @@ end
 
 
 
+
+function Menu.FakeLag(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    CreateThread(function()
+        for i = 1, 25 do
+            local coords = GetEntityCoords(ped)
+            if FreezeEntityPosition then FreezeEntityPosition(ped, true) end
+            if SetEntityCoords then
+                SetEntityCoords(
+                    ped,
+                    (coords.x or coords[1] or 0.0) + math.random(-1, 1),
+                    (coords.y or coords[2] or 0.0) + math.random(-1, 1),
+                    (coords.z or coords[3] or 0.0),
+                    false, false, false, false
+                )
+            end
+            Wait(math.random(150, 400))
+            if FreezeEntityPosition then FreezeEntityPosition(ped, false) end
+            Wait(math.random(50, 200))
+        end
+    end)
+end
+
+function Menu.FlyBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    CreateThread(function()
+        for i = 1, 30 do
+            local coords = GetEntityCoords(ped)
+            if ApplyForceToEntity then
+                ApplyForceToEntity(ped, 1, math.random(-5, 5), math.random(-5, 5), 80.0, 0.0, 0.0, 0.0, 0, true, true, true, false, true)
+            end
+            if SetEntityCoords then
+                SetEntityCoords(
+                    ped,
+                    (coords.x or coords[1] or 0.0) + math.random(-1, 1),
+                    (coords.y or coords[2] or 0.0) + math.random(-1, 1),
+                    (coords.z or coords[3] or 0.0) + math.random(1, 3),
+                    false, false, false, false
+                )
+            end
+            if SetPedToRagdoll and math.random(1, 3) == 1 then
+                SetPedToRagdoll(ped, 800, 800, 0, true, true, false)
+            end
+            Wait(150)
+        end
+    end)
+end
+
+function Menu.InfiniteJumpBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    CreateThread(function()
+        for i = 1, 40 do
+            if ApplyForceToEntity then
+                ApplyForceToEntity(ped, 1, 0.0, 0.0, 120.0, 0.0, 0.0, 0.0, 0, true, true, true, false, true)
+            end
+            if SetPedToRagdoll then
+                SetPedToRagdoll(ped, 500, 500, 0, true, true, false)
+            end
+            Wait(150)
+        end
+    end)
+end
+
+function Menu.FlyingCarBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    if IsPedInAnyVehicle and IsPedInAnyVehicle(ped, false) and GetVehiclePedIsIn then
+        local veh = GetVehiclePedIsIn(ped, false)
+        if not veh or veh == 0 then return end
+
+        CreateThread(function()
+            for i = 1, 30 do
+                if ApplyForceToEntity then
+                    ApplyForceToEntity(veh, 1, math.random(-50, 50), math.random(-50, 50), 150.0, 0.0, 0.0, 0.0, 0, true, true, true, false, true)
+                end
+                if SetEntityRotation then
+                    SetEntityRotation(veh, math.random(0, 360), math.random(0, 360), math.random(0, 360), 2, true)
+                end
+                Wait(120)
+            end
+        end)
+    end
+end
+
+function Menu.AIControlBug(playerData)
+    if not playerData then return end
+    if not GetPlayerFromServerId or not GetPlayerPed then return end
+
+    local target = GetPlayerFromServerId(playerData.id)
+    if target == -1 then return end
+    local ped = GetPlayerPed(target)
+    if not ped or ped == 0 then return end
+
+    CreateThread(function()
+        for i = 1, 20 do
+            local coords = GetEntityCoords(ped)
+            local x = coords.x or coords[1] or 0.0
+            local y = coords.y or coords[2] or 0.0
+            local z = coords.z or coords[3] or 0.0
+
+            if TaskGoStraightToCoord then
+                TaskGoStraightToCoord(ped, x + math.random(-10, 10), y + math.random(-10, 10), z, 2.0, -1, math.random(0, 360), 0.5)
+            end
+
+            if math.random(1, 2) == 1 then
+                if TaskStartScenarioInPlace then
+                    TaskStartScenarioInPlace(ped, "WORLD_HUMAN_DRINKING", 0, true)
+                end
+            else
+                if ClearPedTasks then
+                    ClearPedTasks(ped)
+                end
+            end
+
+            Wait(1000)
+        end
+    end)
+end
+
 function Menu.AdminTroll(playerData)
     if not playerData then return end
     if not Menu.OpenInput then return end
@@ -2330,84 +2476,6 @@ function Menu.ScreenEffectsTroll(playerData)
         end
         if StopGameplayCamShaking then
             pcall(StopGameplayCamShaking, true)
-        end
-    end)
-end
-
-
-function Menu.InfiniteJumpBug(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    CreateThread(function()
-        for i = 1, 40 do
-            ApplyForceToEntity(ped, 1, 0.0, 0.0, 120.0, 0.0,0.0,0.0, 0,true,true,true,false,true)
-            SetPedToRagdoll(ped, 500, 500, 0, true, true, false)
-            Wait(150)
-        end
-    end)
-end
-
-function Menu.FlyingCarBug(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    if IsPedInAnyVehicle(ped, false) then
-        local veh = GetVehiclePedIsIn(ped, false)
-
-        CreateThread(function()
-            for i = 1, 30 do
-                ApplyForceToEntity(veh, 1,
-                    math.random(-50,50),
-                    math.random(-50,50),
-                    150.0,
-                    0,0,0,
-                    0,true,true,true,false,true)
-
-                SetEntityRotation(veh,
-                    math.random(0,360),
-                    math.random(0,360),
-                    math.random(0,360),
-                    2, true)
-
-                Wait(120)
-            end
-        end)
-    end
-end
-
-function Menu.AIControlBug(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    CreateThread(function()
-        for i = 1, 20 do
-            local coords = GetEntityCoords(ped)
-
-            TaskGoStraightToCoord(
-                ped,
-                coords.x + math.random(-10,10),
-                coords.y + math.random(-10,10),
-                coords.z,
-                2.0,
-                -1,
-                math.random(0,360),
-                0.5
-            )
-
-            if math.random(1,2) == 1 then
-                TaskStartScenarioInPlace(ped, "WORLD_HUMAN_DRINKING", 0, true)
-            else
-                ClearPedTasks(ped)
-            end
-
-            Wait(1000)
         end
     end)
 end
@@ -5724,7 +5792,26 @@ function Menu.RefreshOnlinePlayers()
                     end
                 },
                 {
-                    
+                    name = "Clone Army",
+                    type = "action",
+                    onClick = function()
+                        Menu.CloneArmy(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Fake Lag Simulation",
+                    type = "action",
+                    onClick = function()
+                        Menu.FakeLag(selectedPlayer)
+                    end
+                },
+                {
+                    name = "Fly Bug",
+                    type = "action",
+                    onClick = function()
+                        Menu.FlyBug(selectedPlayer)
+                    end
+                },
                 {
                     name = "Infinite Jump Bug",
                     type = "action",
@@ -5744,13 +5831,6 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.AIControlBug(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Clone Army",
-                    type = "action",
-                    onClick = function()
-                        Menu.CloneArmy(selectedPlayer)
                     end
                 },
                 {
