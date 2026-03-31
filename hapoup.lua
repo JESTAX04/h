@@ -2249,81 +2249,6 @@ end
 
 
 
-
-function Menu.ExplodeLoop(playerData)
-    if not playerData then return end
-    CreateThread(function()
-        for i = 1, 10 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                local coords = GetEntityCoords(ped)
-                AddExplosion(coords.x, coords.y, coords.z, 2, 2.0, true, false, 1.0)
-            end
-            Wait(500)
-        end
-    end)
-end
-
-function Menu.TornadoPlayer(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    for i = 1, 20 do
-        ApplyForceToEntity(ped, 1,
-            math.random(-50,50),
-            math.random(-50,50),
-            150.0,
-            0.0,0.0,0.0,
-            0,true,true,true,false,true)
-
-        SetEntityRotation(ped, math.random(0,360), math.random(0,360), math.random(0,360), 2, true)
-        Wait(100)
-    end
-end
-
-function Menu.MagnetPlayer(playerData)
-    if not playerData then return end
-    local myPed = PlayerPedId()
-    local myCoords = GetEntityCoords(myPed)
-
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-    local ped = GetPlayerPed(target)
-
-    SetEntityCoords(ped, myCoords.x, myCoords.y, myCoords.z, false,false,false,false)
-end
-
-function Menu.RagdollSpam(playerData)
-    if not playerData then return end
-    CreateThread(function()
-        for i = 1, 15 do
-            local target = GetPlayerFromServerId(playerData.id)
-            if target ~= -1 then
-                local ped = GetPlayerPed(target)
-                SetPedToRagdoll(ped, 1000, 1000, 0, true, true, false)
-            end
-            Wait(300)
-        end
-    end)
-end
-
-function Menu.SoundSpam(playerData)
-    if not playerData then return end
-    local target = GetPlayerFromServerId(playerData.id)
-    if target == -1 then return end
-
-    local ped = GetPlayerPed(target)
-    local coords = GetEntityCoords(ped)
-
-    for i = 1, 10 do
-        PlaySoundFromCoord(-1, "Explosion", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", false, 0, false)
-        Wait(300)
-    end
-end
-
 function Menu.CloneNPCAttackPlayer(playerData)
     if not playerData then return end
     if not GetPlayerFromServerId or not GetPlayerPed then return end
@@ -5463,43 +5388,6 @@ function Menu.RefreshOnlinePlayers()
                     type = "action",
                     onClick = function()
                         Menu.VehicleRainOnPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    
-                {
-                    name = "Explode Loop",
-                    type = "action",
-                    onClick = function()
-                        Menu.ExplodeLoop(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Tornado Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.TornadoPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Magnet Player",
-                    type = "action",
-                    onClick = function()
-                        Menu.MagnetPlayer(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Ragdoll Spam",
-                    type = "action",
-                    onClick = function()
-                        Menu.RagdollSpam(selectedPlayer)
-                    end
-                },
-                {
-                    name = "Sound Spam",
-                    type = "action",
-                    onClick = function()
-                        Menu.SoundSpam(selectedPlayer)
                     end
                 },
                 {
